@@ -83,19 +83,18 @@ public class DepartmentServiceImpl implements DepartmentService{
 //      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "부서를 찾을 수 없습니다.");
 //    }
 
-    // 다음 페이지를 위한 커서 설정
-    String nextCursor = departments.hasNext() ? "eyJpZCI6" + departments.getContent().get(departments.getSize() - 1).getId() + "fQ==" : null;
+    // 다음 페이지를 위한 커서 설정 base64 인코딩, 디코딩으로
+    // "{"id":" 인코딩하면 "eyJpZCI6" 나오고, "}" 디코딩하면 "fQ==" 값이 나온다.
+    String nextCursor = departments.hasNext()
+        ? Base64.getEncoder().encodeToString(
+        ("{\"id\":" + departments.getContent().get(departments.getSize() - 1).getId() + "}").getBytes()) : null;
+
     Long nextIdAfter = departments.hasNext() ? departments.getContent().get(departments.getSize() - 1).getId() : null;
+
     List<DepartmentResponse> departmentList = departments.getContent().stream()
         .map(department -> {
           Long employeeCount = departmentRepository.countEmployeesByDepartmentId(department.getId());
-          return new DepartmentResponse(
-              department.getId(),
-              department.getName(),
-              department.getDescription(),
-              department.getEstablishDate(),
-              employeeCount
-          );
+          return departmentMapper.toDto(department, employeeCount);
         })
         .toList();
     return departmentMapper.toListDto(departmentList, nextCursor, nextIdAfter, size, departments.getTotalElements(), departments.hasNext());
