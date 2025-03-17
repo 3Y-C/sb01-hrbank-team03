@@ -1,4 +1,4 @@
-package com.sprint.part2.sb1hrbankteam03.entity.employee;
+package com.sprint.part2.sb1hrbankteam03.entity;
 
 public enum Status {
   ACTIVE("ACTIVE"),
