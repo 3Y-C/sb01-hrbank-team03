@@ -14,7 +14,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
   // 특정 부서에 속한 직원 수를 카운트
   @Query("SELECT COUNT(e) FROM Employee e WHERE e.department.id = :departmentId")
-  long countEmployeesByDepartmentId(@Param("departmentId") Long departmentId);
+  Integer countEmployeesByDepartmentId(@Param("departmentId") Long departmentId);
 
   //부서 이름이나 설명을 기준으로 검색하고, 시작 ID 이상인 부서들을 조회
   @Query("SELECT d FROM Department d WHERE " +
@@ -27,5 +27,9 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       Pageable pageable);
 
   boolean existsByName(String name);
+
+  // 전체 부서 수를 Integer로 반환
+  @Query("SELECT COUNT(d) FROM Department d")
+  Integer countDepartments();
 
 }
