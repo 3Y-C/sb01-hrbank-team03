@@ -8,15 +8,14 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class EmployeeDistributionDto {
   private String  groupKey;
   private int count;
   private double percentage;
 
-  public EmployeeDistributionDto(String groupKey, int count, int percentage) {
+  public EmployeeDistributionDto(String groupKey, int count, double percentage) {
     this.groupKey = groupKey;
     this.count = count;
-    this.percentage = 0.0;
+    this.percentage = percentage;
   }
 }
