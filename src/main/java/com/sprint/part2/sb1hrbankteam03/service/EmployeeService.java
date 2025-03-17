@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface EmployeeService {
   List<EmployeeDto> getEmployees(String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
-      String status);
+      String status,String sortField, String sortDirection,String cursor,int size);
   EmployeeDto createEmployee(EmployeeCreateRequest request,
       MultipartFile profile);
   EmployeeDto getEmployeeById(Long employeeId);
