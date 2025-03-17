@@ -1,11 +1,14 @@
 package com.sprint.part2.sb1hrbankteam03.service;
 
+import static com.sprint.part2.sb1hrbankteam03.entity.Status.ACTIVE;
+
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
+import com.sprint.part2.sb1hrbankteam03.entity.Department;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.entity.Status;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeMapper;
@@ -18,10 +21,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
@@ -35,8 +40,7 @@ public class EmployeeServiceImpl implements EmployeeService {
   public List<EmployeeDto> getEmployees(String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
       String status) {
-    //Status employeeStatus = (status != null) ? Status.from(status) : null;
-    String employeeStatus = (status != null && !status.trim().isEmpty()) ? status.toUpperCase() : null;
+    Status employeeStatus = (status != null) ? Status.from(status) : null;
 
     // 날짜 변환 시 예외 처리 추가
     LocalDate start = null;
@@ -61,8 +65,8 @@ public class EmployeeServiceImpl implements EmployeeService {
       MultipartFile profile) {
     validateEmailUnique(request.getEmail());
 
-//    Department department = departmentRepository.findById(request.getDepartmentId())
-//        .orElseThrow(()->new IllegalArgumentException("부서를 찾을 수 없습니다."));
+    Department department = departmentRepository.findById(request.getDepartmentId())
+        .orElseThrow(()->new IllegalArgumentException("부서를 찾을 수 없습니다."));
 
     LocalDate parsedHireDate=validateAndParseDate(request.getHireDate());
     String employeeNumber=generateEmployeeNumber(String.valueOf(request.getHireDate()));
@@ -73,10 +77,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.getName(),
         request.getEmail(),
         employeeNumber,
-        null,
+        department,
         request.getPosition(),
         parsedHireDate,
-        "ACTIVE",
+        ACTIVE,
         profileImage
     );
     Employee savedEmployee = employeeRepository.save(employee);
@@ -115,8 +119,8 @@ public class EmployeeServiceImpl implements EmployeeService {
       validateEmailUnique(request.getEmail());
     }
 
-    /*Department department=departmentRepository.findById(request.getDepartmentId())
-        .orElseThrow(()->new IllegalArgumentException("부서를 찾을 수 없습니다."));*/
+    Department department=departmentRepository.findById(request.getDepartmentId())
+        .orElseThrow(()->new IllegalArgumentException("부서를 찾을 수 없습니다."));
 
     /*if (profile!=null) {
       if (employee.getProfileImage()!=null) {
@@ -125,7 +129,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     LocalDate parsedHireDate = validateAndParseDate(request.getHireDate());
 
-    employee.update(request,null,parsedHireDate);
+    employee.update(request,department,parsedHireDate);
 
     return employeeMapper.todto(employee);
   }
@@ -138,25 +142,33 @@ public class EmployeeServiceImpl implements EmployeeService {
     LocalDate end=(endDate != null) ? LocalDate.parse(endDate) : now;
 
     String dateFormat = getDateFormat(unit);
-
-    return employeeRepository.getEmployeeTrend(start,end,dateFormat);
+    List<Object[]> employeeTrend = employeeRepository.getEmployeeTrend(start, end,
+        dateFormat);
+    return employeeTrend.stream().map(row->new EmployeeTrendDto(
+        (String) row[0],
+        ((Number)row[1]).longValue(),
+        ((Number)row[2]).longValue(),
+        ((Number)row[3]).longValue()
+    )).collect(Collectors.toList());
   }
 
 
   @Override
   public List<EmployeeDistributionDto> getEmployeeDistribution(String groupBy, String status) {
-    String criteria = (groupBy != null) ? groupBy.toLowerCase() : "department";
-    Status employeeStatus=Status.from(status);
+    String criteria =(groupBy != null)? groupBy.toLowerCase():"department";
+    Status employeeStatus=(status !=null)? Status.from(status):ACTIVE;
+    List<Object[]> data = employeeRepository.getEmployeeDistribution(criteria, employeeStatus);
 
-    List<EmployeeDistributionDto> distribution = employeeRepository.getEmployeeDistribution(criteria, employeeStatus);
     long totalCount=employeeRepository.countByStatus(employeeStatus);
+    List<EmployeeDistributionDto> distribution = data.stream()
+        .map(objects -> {
+          String groupKey = (String) objects[0];
+          int count = ((Number) objects[1]).intValue();
+          double percentage = (totalCount > 0) ? (count * 100.0 / totalCount) : 0.0;
 
-
-    //퍼센트계산
-    distribution.forEach(dto->{
-      double percentage=(totalCount>0)?((double) dto.getCount()/totalCount)*100:0;
-      dto.setPercentage(percentage);
-    });
+          return new EmployeeDistributionDto(groupKey, count, percentage);
+        })
+        .toList();
     return distribution;
   }
 
@@ -215,17 +227,16 @@ public class EmployeeServiceImpl implements EmployeeService {
   private String getDateFormat(String unit) {
     switch (unit.toLowerCase()) {
       case "day":
-        return "%Y-%m-%d";  // 일별
+        return "YYYY-MM-DD";
       case "week":
-        return "%Y-%u";     // 주별 (ISO 주 번호)
+        return "IYYY-IW"; // ISO Week
       case "month":
-        return "%Y-%m";     // 월별
+        return "YYYY-MM";
       case "quarter":
-        return "%Y-Q%q";    // 분기별
+        return "YYYY-Q";
       case "year":
-        return "%Y";        // 연도별
+        return "YYYY";
       default:
-        return "%Y-%m";
-    }
-  }
+        return "YYYY-MM";
+    }  }
 }

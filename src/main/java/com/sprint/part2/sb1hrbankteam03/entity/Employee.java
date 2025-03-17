@@ -4,6 +4,8 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -34,6 +36,7 @@ public class Employee extends BaseUpdatableEntity {
   private String position;
   @Column(nullable = false)
   private LocalDate hireDate;
+
 
  // @Enumerated(EnumType.STRING)
   @Column(nullable = false)

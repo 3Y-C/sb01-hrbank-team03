@@ -10,14 +10,14 @@ import lombok.Setter;
 @NoArgsConstructor
 public class EmployeeTrendDto {
   private String  date;
-  private int count;
-  private int change;
+  private long count;
+  private long change;
   private double changeRate;
 
-  public EmployeeTrendDto(String date, int count, int change, double changeRate) {
+  public EmployeeTrendDto(String date, long count, long change, double changeRate) {
     this.date = date;
     this.count = count;
-    this.change = 0;
-    this.changeRate = 0.0;
+    this.change = change;
+    this.changeRate = changeRate;
   }
 }
