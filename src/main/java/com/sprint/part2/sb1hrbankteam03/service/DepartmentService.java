@@ -16,4 +16,6 @@ public interface DepartmentService {
       String sortDirection);
 
   void delete(Long id);
+
+  DepartmentDto findById(Long id);
 }

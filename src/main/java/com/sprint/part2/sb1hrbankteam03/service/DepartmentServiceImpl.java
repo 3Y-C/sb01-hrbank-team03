@@ -68,6 +68,17 @@ public class DepartmentServiceImpl implements DepartmentService{
     departmentRepository.deleteById(id);
   }
 
+  @Transactional
+  public DepartmentDto findById(Long id){
+    Department department = departmentRepository.findById(id)
+        .orElseThrow(() -> new NoSuchElementException("department with id"  + id + "not found"));
+    // 직원 수 조회
+    Integer employeeCount = departmentRepository.countEmployeesByDepartmentId(id);
+
+    return departmentMapper.toDto(department, employeeCount);
+  }
+
+
 
 
   @Transactional(readOnly = true)

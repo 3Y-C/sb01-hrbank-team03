@@ -37,8 +37,8 @@ public class DepartmentController {
   @PatchMapping("/{id}")
   public ResponseEntity<DepartmentDto> update(@PathVariable Long id,
       @RequestBody DepartmentUpdateRequest departmentUpdateRequest){
-    DepartmentDto Response= departmentService.update(id,departmentUpdateRequest);
-    return ResponseEntity.status(HttpStatus.OK).body(Response);
+    DepartmentDto response= departmentService.update(id,departmentUpdateRequest);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
   @GetMapping
@@ -58,6 +58,14 @@ public class DepartmentController {
     departmentService.delete(id);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<DepartmentDto> findById(@PathVariable Long id){
+    DepartmentDto response = departmentService.findById(id);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
+  }
+
+
 
 
 
