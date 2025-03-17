@@ -5,15 +5,21 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class EmployeeHistory extends BaseEntity {
 
-  String employeeNumber; //추가함!!
-
-/*  @OneToMany(mappedBy ="employeeHistory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  List<EmployeeChangeDetail> getEmployeeChangeDetails = new ArrayList<>();*/
+  String employeeNumber;
 
   @Enumerated(EnumType.STRING)
   ChangeType changeType;
