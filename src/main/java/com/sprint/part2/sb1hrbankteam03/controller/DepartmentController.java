@@ -3,10 +3,9 @@ package com.sprint.part2.sb1hrbankteam03.controller;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentGetRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
-import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseChangeLogDto;
+import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseDepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.service.DepartmentService;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,26 +36,13 @@ public class DepartmentController {
   @PatchMapping("/{id}")
   public ResponseEntity<DepartmentDto> update(@PathVariable Long id,
       @RequestBody DepartmentUpdateRequest departmentUpdateRequest){
-    DepartmentDto Response= departmentService.update(id,departmentUpdateRequest);
-    return ResponseEntity.status(HttpStatus.OK).body(Response);
+    DepartmentDto response= departmentService.update(id,departmentUpdateRequest);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
-//  @GetMapping
-//  public ResponseEntity<Map<String, Object>> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
-//    Map<String, Object> response = departmentService.findDepartments(
-//        departmentGetRequest.nameOrDescription(),
-//        departmentGetRequest.idAfter(),
-//        departmentGetRequest.cursor(),
-//        departmentGetRequest.size(),
-//        departmentGetRequest.sortField(),
-//        departmentGetRequest.sortDirection()
-//    );
-//    return ResponseEntity.status(HttpStatus.OK).body(response);
-//  }
-
   @GetMapping
-  public ResponseEntity<CursorPageResponseChangeLogDto> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
-    CursorPageResponseChangeLogDto response = departmentService.findDepartments(
+  public ResponseEntity<CursorPageResponseDepartmentDto> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
+    CursorPageResponseDepartmentDto response = departmentService.findDepartments(
         departmentGetRequest.nameOrDescription(),
         departmentGetRequest.idAfter(),
         departmentGetRequest.cursor(),
@@ -67,9 +53,17 @@ public class DepartmentController {
   }
 
   @DeleteMapping("/{id}")
-  public void delete(@PathVariable Long id){
-
+  public ResponseEntity<Void> delete(@PathVariable Long id){
+    departmentService.delete(id);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<DepartmentDto> findById(@PathVariable Long id){
+    DepartmentDto response = departmentService.findById(id);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
+  }
+
 
 
 
