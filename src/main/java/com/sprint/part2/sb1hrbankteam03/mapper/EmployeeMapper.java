@@ -1,7 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.mapper;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
-import com.sprint.part2.sb1hrbankteam03.entity.employee.Employee;
+import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,10 +13,8 @@ public class EmployeeMapper {
         savedEmployee.getName(),
         savedEmployee.getEmail(),
         savedEmployee.getEmployeeNumber(),
-        //savedEmployee.getDepartment().getId().toString(),
-        //savedEmployee.getDepartment().getName(),
-        null,
-        null,
+        savedEmployee.getDepartment().getId().toString(),
+        savedEmployee.getDepartment().getName(),
         savedEmployee.getPosition(),
         savedEmployee.getHireDate().toString(),
         savedEmployee.getStatus().toString(),

@@ -2,8 +2,8 @@ package com.sprint.part2.sb1hrbankteam03.repository;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
-import com.sprint.part2.sb1hrbankteam03.entity.employee.Status;
-import com.sprint.part2.sb1hrbankteam03.entity.employee.Employee;
+import com.sprint.part2.sb1hrbankteam03.entity.Status;
+import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,24 +14,34 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
   boolean existsByEmail(String email);
 
-  @Query(value = "SELECT DATE_FORMAT(e.hire_date, :format) AS date, COUNT(e.id) AS count " +
+  @Query(value = "SELECT " +
+      "TO_CHAR(e.hire_date, :format) AS date, " +
+      "(SELECT COUNT(*) FROM employee e2 WHERE e2.hire_date <= e.hire_date) AS totalCount, " +
+      "COUNT(e.id) AS changeCount, " +
+      "CASE WHEN (SELECT COUNT(*) FROM employee e2 WHERE e2.hire_date <= e.hire_date) > 0 " +
+      "     THEN (COUNT(e.id) * 100.0 / (SELECT COUNT(*) FROM employee e2 WHERE e2.hire_date <= e.hire_date)) " +
+      "     ELSE 0 END AS changeRatio " +
       "FROM employee e " +
       "WHERE e.hire_date BETWEEN :startDate AND :endDate " +
-      "GROUP BY DATE_FORMAT(e.hire_date, :format) " +
-      "ORDER BY DATE_FORMAT(e.hire_date, :format)",
+      "GROUP BY e.hire_date, TO_CHAR(e.hire_date, :format) " +
+      "ORDER BY TO_CHAR(e.hire_date, :format)",
       nativeQuery = true)
-  List<EmployeeTrendDto> getEmployeeTrend(@Param("startDate") LocalDate start,
+  List<Object[]> getEmployeeTrend(@Param("startDate") LocalDate start,
       @Param("endDate") LocalDate end, @Param("format") String timeUnit);
 
-  @Query(value = "SELECT " +
-      "   CASE WHEN :criteria = 'department' THEN d.name ELSE e.position END AS groupKey, " +
-      "   COUNT(*) AS count " +
-      "FROM employee e " +
-      "LEFT JOIN department d ON e.department_id = d.id " +
+  @Query("SELECT " +
+      "  CASE " +
+      "      WHEN FUNCTION('LOWER', :criteria) = 'department' THEN COALESCE(d.name, 'Unknown') " +
+      "      ELSE COALESCE(e.position, 'Unknown') " +
+      "  END AS groupKey, " +
+      "  COUNT(e) AS count " +
+      "FROM Employee e " +
+      "LEFT JOIN e.department d " +
       "WHERE e.status = :status " +
-      "GROUP BY groupKey", nativeQuery = true)
-  List<EmployeeDistributionDto> getEmployeeDistribution(@Param("criteria") String criteria,
-      @Param("status") Status employeeStatus);
+      "GROUP BY d.name, e.position " +
+      "ORDER BY COUNT(e) DESC")
+  List<Object[]> getEmployeeDistribution(@Param("criteria") String criteria,
+      @Param("status") Status status);
 
 
   //전체 직원 조회
@@ -62,6 +72,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
       @Param("employeeNumber") String employeeNumber,
       @Param("startDate") LocalDate startDate,
       @Param("endDate") LocalDate endDate,
-      @Param("status") String status);
+      @Param("status") Status status);
 
 }
