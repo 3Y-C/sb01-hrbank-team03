@@ -2,6 +2,8 @@ package com.sprint.part2.sb1hrbankteam03.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -25,5 +27,9 @@ public class FileMetaData extends BaseEntity{
 
   @Column(name = "size",nullable = false)
   Long fileSize;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "file_category",nullable = false)
+  private FileCategory fileCategory;
 
 }
