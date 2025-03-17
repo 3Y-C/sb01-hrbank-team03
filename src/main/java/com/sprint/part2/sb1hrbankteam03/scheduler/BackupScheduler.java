@@ -14,12 +14,8 @@ public class BackupScheduler {
 
   private final BackupService backupService;
 
-
   @Value("${backup.scheduler.enabled:true}")
   private boolean schedulerEnabled;
-
-  @Value("${backup.interval.minutes:60}")
-  private int interval;
 
   //주기적으로 실행할 메서드에 적용한다.
   //fixedDelay: 이전 작업 완료 지정된 시간(밀리초) 후에 다음 작업 실행
