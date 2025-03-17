@@ -38,9 +38,9 @@ public class Employee extends BaseUpdatableEntity {
   private LocalDate hireDate;
 
 
- // @Enumerated(EnumType.STRING)
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private String status;
+  private Status status;
 
   @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "profile_id")
@@ -52,11 +52,11 @@ public class Employee extends BaseUpdatableEntity {
     this.department = department;
     this.position = request.getPosition();
     this.hireDate = hireDate;
-    this.status=request.getStatus().toUpperCase();
+    this.status=Status.valueOf(request.getStatus());
   }
 
   public void setProfileImage(FileMetaData profileImage) {
     this.profileImage = profileImage;
   }
-  public void setStatus(String status) {this.status = status.toUpperCase();}
+  public void setStatus(String status) {this.status = Status.valueOf(status);}
 }
