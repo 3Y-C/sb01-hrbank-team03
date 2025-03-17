@@ -1,4 +1,4 @@
-package com.sprint.part2.sb1hrbankteam03.controller.employee;
+package com.sprint.part2.sb1hrbankteam03.controller;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
@@ -82,7 +82,7 @@ public class EmployeeController {
 
 
 
-  @GetMapping("/ststs/distribution")
+  @GetMapping("/stats/distribution")
   public ResponseEntity<List<EmployeeDistributionDto>> getEmployeeDistribution(
           @RequestParam(required = false,defaultValue = "department") String groupBy,
       @RequestParam(required = false,defaultValue = "ACTIVE") String status) {
