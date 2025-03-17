@@ -3,7 +3,7 @@ package com.sprint.part2.sb1hrbankteam03.controller;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeChangeDetailDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeHistoryDto;
 import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
-import com.sprint.part2.sb1hrbankteam03.service.employeeHistory.EmployeeHistoryServiceImpl;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryServiceImpl;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

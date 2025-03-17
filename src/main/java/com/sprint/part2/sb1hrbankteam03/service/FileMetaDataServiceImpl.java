@@ -1,4 +1,4 @@
-package com.sprint.part2.sb1hrbankteam03.service.fileMetaData;
+package com.sprint.part2.sb1hrbankteam03.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
