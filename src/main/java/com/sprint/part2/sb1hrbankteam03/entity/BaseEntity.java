@@ -4,8 +4,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import java.time.Instant;
+import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 
+@Getter
 @MappedSuperclass
 public abstract class BaseEntity {
 
