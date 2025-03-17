@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class BackupServiceImlp implements BackupService {
+public class BackupServiceImpl implements BackupService {
 
   private final BackupRepository backupRepository;
   private final EmployeeHistoryRepository employeeHistoryRepository;
