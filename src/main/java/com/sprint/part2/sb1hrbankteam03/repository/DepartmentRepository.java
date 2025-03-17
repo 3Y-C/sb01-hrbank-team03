@@ -28,4 +28,8 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
   boolean existsByName(String name);
 
+  // 전체 부서 수를 Integer로 반환
+  @Query("SELECT COUNT(d) FROM Department d")
+  Integer countDepartments();
+
 }

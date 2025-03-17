@@ -1,6 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.mapper;
 
-import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentListResponse;
+import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
 import java.time.format.DateTimeFormatter;
@@ -23,9 +23,9 @@ public class DepartmentMapper {
   }
 
 
-  public DepartmentListResponse toListDto(List<DepartmentDto> departmentList,
-      String nextCursor, Long nextIdAfter,int size, long totalElements, boolean hasNext){
-    return new DepartmentListResponse(
+  public CursorPageResponseChangeLogDto toCursorPageResponseDto(List<DepartmentDto> departmentList,
+      String nextCursor, Long nextIdAfter,int size, Integer totalElements, boolean hasNext){
+    return new CursorPageResponseChangeLogDto(
         departmentList,
         nextCursor,
         nextIdAfter,

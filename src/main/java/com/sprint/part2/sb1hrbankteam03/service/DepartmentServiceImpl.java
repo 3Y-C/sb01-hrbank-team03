@@ -2,7 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.service;
 
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
-import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentListResponse;
+import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
 import com.sprint.part2.sb1hrbankteam03.mapper.DepartmentMapper;
@@ -62,7 +62,7 @@ public class DepartmentServiceImpl implements DepartmentService{
 
 
   @Transactional(readOnly = true)
-  public Map<String, Object> findDepartments(String nameOrDescription, Long idAfter,
+  public CursorPageResponseChangeLogDto findDepartments(String nameOrDescription, Long idAfter,
       String cursor, int size, String sortField,
       String sortDirection) {
 
@@ -98,16 +98,14 @@ public class DepartmentServiceImpl implements DepartmentService{
           return departmentMapper.toDto(department, employeeCount);
         })
         .collect(Collectors.toList());
-//    return departmentMapper.toListDto(departmentList, nextCursor, nextIdAfter, size, departments.getTotalElements(), departments.hasNext());
-    // 응답에 필요한 데이터를 Map으로 담아서 반환
-    Map<String, Object> response = new HashMap<>();
-    response.put("content", departmentList);
-    response.put("nextCursor", nextCursor);
-    response.put("nextIdAfter", nextIdAfter);
-    response.put("size", size);
-    response.put("totalElements", departments.getTotalElements());
-    response.put("hasNext", departments.hasNext());
 
-    return response;
+    Integer totalDepartments = departmentRepository.countDepartments();
+
+    return departmentMapper.toCursorPageResponseDto(departmentList,
+        nextCursor,
+        nextIdAfter,
+        size,
+        totalDepartments,
+        departments.hasNext());
   }
 }

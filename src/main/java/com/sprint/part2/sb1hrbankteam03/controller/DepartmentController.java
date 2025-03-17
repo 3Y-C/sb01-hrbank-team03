@@ -3,7 +3,7 @@ package com.sprint.part2.sb1hrbankteam03.controller;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentGetRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
-import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentListResponse;
+import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.service.DepartmentService;
 import java.util.Map;
@@ -41,34 +41,33 @@ public class DepartmentController {
     return ResponseEntity.status(HttpStatus.OK).body(Response);
   }
 
-  @GetMapping
-  public ResponseEntity<Map<String, Object>> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
-    Map<String, Object> response = departmentService.findDepartments(
-        departmentGetRequest.nameOrDescription(),
-        departmentGetRequest.idAfter(),
-        departmentGetRequest.cursor(),
-        departmentGetRequest.size(),
-        departmentGetRequest.sortField(),
-        departmentGetRequest.sortDirection()
-    );
-    return ResponseEntity.status(HttpStatus.OK).body(response);
-  }
-
 //  @GetMapping
-//  public ResponseEntity<DepartmentListResponse> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
-//    DepartmentListResponse response = departmentService.findDepartments(
+//  public ResponseEntity<Map<String, Object>> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
+//    Map<String, Object> response = departmentService.findDepartments(
 //        departmentGetRequest.nameOrDescription(),
 //        departmentGetRequest.idAfter(),
 //        departmentGetRequest.cursor(),
 //        departmentGetRequest.size(),
 //        departmentGetRequest.sortField(),
-//        departmentGetRequest.sortDirection());
+//        departmentGetRequest.sortDirection()
+//    );
 //    return ResponseEntity.status(HttpStatus.OK).body(response);
 //  }
 
+  @GetMapping
+  public ResponseEntity<CursorPageResponseChangeLogDto> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
+    CursorPageResponseChangeLogDto response = departmentService.findDepartments(
+        departmentGetRequest.nameOrDescription(),
+        departmentGetRequest.idAfter(),
+        departmentGetRequest.cursor(),
+        departmentGetRequest.size(),
+        departmentGetRequest.sortField(),
+        departmentGetRequest.sortDirection());
+    return ResponseEntity.status(HttpStatus.OK).body(response);
+  }
+
   @DeleteMapping("/{id}")
   public void delete(@PathVariable Long id){
-
 
   }
 
