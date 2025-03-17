@@ -35,6 +35,6 @@ public class EmployeeHistory extends BaseEntity {
   @Column(name = "ip_address",nullable = false)
   String ipAddress;
 
-  @Column(name = "emloyee_number",nullable = false)
+  @Column(name = "edited_at",nullable = false)
   Instant editedAt;
 }
