@@ -2,7 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.dto.department.respons;
 
 import java.util.List;
 
-public record CursorPageResponseChangeLogDto(
+public record CursorPageResponseDepartmentDto(
     List<DepartmentDto> content,
     String nextCursor,
     Long nextIdAfter,

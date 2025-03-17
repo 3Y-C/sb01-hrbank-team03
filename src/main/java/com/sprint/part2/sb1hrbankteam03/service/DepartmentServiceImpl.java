@@ -2,7 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.service;
 
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
-import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseChangeLogDto;
+import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseDepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
 import com.sprint.part2.sb1hrbankteam03.mapper.DepartmentMapper;
@@ -82,7 +82,7 @@ public class DepartmentServiceImpl implements DepartmentService{
 
 
   @Transactional(readOnly = true)
-  public CursorPageResponseChangeLogDto findDepartments(String nameOrDescription, Long idAfter,
+  public CursorPageResponseDepartmentDto findDepartments(String nameOrDescription, Long idAfter,
       String cursor, int size, String sortField,
       String sortDirection) {
 
