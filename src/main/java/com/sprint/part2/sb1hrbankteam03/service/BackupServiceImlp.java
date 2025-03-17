@@ -80,11 +80,21 @@ public class BackupServiceImlp implements BackupService {
       throw new IllegalArgumentException("requestBackupDto cannot be null");
     }
 
-    return backupRepository.findByStatusAndWorkerIpContainingAndStartAtBetweenOrderByStartAtDesc(
+    LocalDateTime startedAtFrom = null;
+    if (requestBackupDto.getStartedAtFrom() != null) {
+      startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
+    }
+
+    LocalDateTime startedAtTo = null;
+    if (requestBackupDto.getStartedAtTo() != null) {
+      startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
+    }
+
+    return backupRepository.findByConditions(
         BackupStatus.valueOf(requestBackupDto.getStatus()),
         requestBackupDto.getWorker(),
-        LocalDateTime.parse(requestBackupDto.getStartedAtFrom()),
-        LocalDateTime.parse(requestBackupDto.getStartedAtTo())
+        startedAtFrom,
+        startedAtTo
     ).stream().map(backupMapper::toDto).toList();
   }
 
@@ -113,13 +123,14 @@ public class BackupServiceImlp implements BackupService {
     backup = backupRepository.save(backup);
 
     try {
-      FileMetaData backupFile = new FileMetaData();
-      backupFile.setFileName(
-          "employee_backup_" + LocalDateTime.now().toString().replace(":", "-") + ".csv");
-      backupFile.setFileType("text/csv");
+      String fileName =
+          "employee_backup_" + LocalDateTime.now().toString().replace(":", "-") + ".csv";
+      String fileType = "text/csv";
 
       //임시 파일 생성
-      Path tempFile = Files.createTempFile(backupFile.getFileName(), ".csv");
+      Path tempFile = Files.createTempFile(fileName, ".csv");
+
+      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length());
 
       //버퍼 writer 로 백업 데이터 쓰기
       try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
@@ -159,16 +170,18 @@ public class BackupServiceImlp implements BackupService {
       //실패한 경우
 
       //에러 log 파일 생성
-      FileMetaData errorLogFile = new FileMetaData();
-      errorLogFile.setFileName(
-          "backup_error_" + LocalDateTime.now().toString().replace(":", "-") + ".log");
-      errorLogFile.setFileType("text/plain");
+      String fileName = "backup_error_" + LocalDateTime.now().toString().replace(":", "-") + ".log";
+      String fileType = "text/plain";
 
       // 에러 메세지
       String errorMessage = String.format("Backup failed at %s\nError: %s\nStack trace: %s",
           LocalDateTime.now(),
           e.getMessage(),
           Arrays.toString(e.getStackTrace()));
+
+      //메타데이터 생성
+      FileMetaData errorLogFile = new FileMetaData(fileName, fileType,
+          (long) errorMessage.getBytes().length);
 
       // 로그 파일 저장
       fileStorage.put(errorLogFile.getId(), errorMessage.getBytes(StandardCharsets.UTF_8));
@@ -180,7 +193,6 @@ public class BackupServiceImlp implements BackupService {
       backup.setStatus(BackupStatus.FAILED);
       backup.setEndAt(LocalDateTime.now());
       backup.setBackupFile(savedErrorFile);
-
     }
     return backupRepository.save(backup);
   }

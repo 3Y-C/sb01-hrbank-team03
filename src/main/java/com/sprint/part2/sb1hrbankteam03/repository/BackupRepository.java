@@ -6,15 +6,27 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface BackupRepository extends JpaRepository<Backup, Long> {
 
   //데이터 백업 이력 중 가장 최신 작업 조회
   Optional<Backup> findTopByStatusOrderByEndAtDesc(BackupStatus status);
 
-  List<Backup> findByStatusAndWorkerIpContainingAndStartAtBetweenOrderByStartAtDesc(
-      BackupStatus status, String workerIp, LocalDateTime startAtFrom, LocalDateTime startAtTo
-      );
+  //조건 일치하는 백업 이력 조회
+  @Query("SELECT b FROM Backup b WHERE " +
+      "(:status IS NULL OR b.status = :status) AND " +
+      "(:workerIp IS NULL OR b.workerIp LIKE CONCAT('%', :workerIp, '%')) AND " +
+      "(:startAtFrom IS NULL OR b.startAt >= :startAtFrom) AND " +
+      "(:startAtTo IS NULL OR b.startAt <= :startAtTo) " +
+      "ORDER BY b.startAt DESC")
+  List<Backup> findByConditions(
+      @Param("status") BackupStatus status,
+      @Param("workerIp") String workerIp,
+      @Param("startAtFrom") LocalDateTime startAtFrom,
+      @Param("startAtTo") LocalDateTime startAtTo);
+
 
 /*  @Query(value = "SELECT b FROM Backup b " +
       "WHERE b.status = :status " +
