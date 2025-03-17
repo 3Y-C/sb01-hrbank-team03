@@ -36,10 +36,16 @@ public class EmployeeController {
       @RequestParam(required = false) String employeeNumber,  // 사원번호 (부분 일치)
       @RequestParam(required = false) String startDate,  // 입사일 범위 시작
       @RequestParam(required = false) String endDate,  // 입사일 범위 끝
-      @RequestParam(required = false) String status) { // 상태 (완전 일치)
+      @RequestParam(required = false) String status,
+      @RequestParam(defaultValue = "name") String sortField,
+      @RequestParam(defaultValue = "asc") String sortDirection,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(defaultValue = "10") int size
+
+  ) { // 상태 (완전 일치)
 
     List<EmployeeDto> employees = employeeService.getEmployees(keyword, department, position,
-        employeeNumber, startDate, endDate, status);
+        employeeNumber, startDate, endDate, status,sortField,sortDirection,cursor,size);
 
     return ResponseEntity.ok(employees);
   }

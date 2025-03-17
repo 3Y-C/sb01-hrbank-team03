@@ -4,6 +4,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Status;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
+import java.awt.print.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -63,15 +64,18 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
       "AND (:employeeNumber IS NULL OR e.employeeNumber LIKE CONCAT('%', :employeeNumber, '%')) " +
       "AND (:status IS NULL OR e.status = :status) " +
       "AND (COALESCE(:startDate, e.hireDate) <= e.hireDate " +
-      "     AND COALESCE(:endDate, e.hireDate) >= e.hireDate)")
-
-  List<Employee> findEmployees(
+      "     AND COALESCE(:endDate, e.hireDate) >= e.hireDate) "+
+      "AND (:idAfter IS NULL OR e.id >:idAfter)"
+  )
+  List<Employee> findEmployeesWithCursor(
       @Param("keyword") String keyword,
       @Param("department") String department,
       @Param("position") String position,
       @Param("employeeNumber") String employeeNumber,
       @Param("startDate") LocalDate startDate,
       @Param("endDate") LocalDate endDate,
-      @Param("status") Status status);
+      @Param("status") Status status,
+      @Param("idAfter") Long idAfter,
+      Pageable pageable);
 
 }

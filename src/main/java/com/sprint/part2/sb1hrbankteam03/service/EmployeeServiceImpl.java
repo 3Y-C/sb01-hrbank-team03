@@ -14,6 +14,7 @@ import com.sprint.part2.sb1hrbankteam03.entity.Status;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
+import java.awt.print.Pageable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -22,6 +23,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,8 +43,12 @@ public class EmployeeServiceImpl implements EmployeeService {
   @Override
   public List<EmployeeDto> getEmployees(String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
-      String status) {
+      String status,String sortField, String sortDirection,String cursor,int size) {
     Status employeeStatus = (status != null) ? Status.from(status) : null;
+
+    Pageable pageable = (Pageable) PageRequest.of(0, size,getSort(sortField,sortDirection));
+    Long idAfter=(cursor!=null)?Long.parseLong(cursor):null;
+
 
     // 날짜 변환 시 예외 처리 추가
     LocalDate start = null;
@@ -53,8 +61,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
 
-    List<Employee> employees = employeeRepository.findEmployees(keyword, department, position,
-        employeeNumber, start, end, employeeStatus);
+    List<Employee> employees = employeeRepository.findEmployeesWithCursor(keyword, department, position,
+        employeeNumber, start, end, employeeStatus,idAfter,pageable);
 
     return employees.stream().map(employeeMapper::todto).collect(Collectors.toList());
   }
@@ -239,4 +247,14 @@ public class EmployeeServiceImpl implements EmployeeService {
       default:
         return "YYYY-MM";
     }  }
+
+  private Sort getSort(String sortField, String sortDirection) {
+    Sort.Direction direction =sortDirection.equalsIgnoreCase("desc")?Sort.Direction.DESC:Sort.Direction.ASC;
+    return switch (sortField.toLowerCase()){
+      case "name" -> Sort.by(direction,"name");
+      case "employeeNumber" -> Sort.by(direction,"employeeNumber");
+      case "hireDate" -> Sort.by(direction,"hireDate");
+      default -> Sort.by(Sort.Direction.ASC,"name");
+    };
+  }
 }
