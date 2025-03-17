@@ -2,11 +2,11 @@ package com.sprint.part2.sb1hrbankteam03.dto.department.respons;
 
 import java.util.List;
 
-public record DepartmentListResponse(
-    List<DepartmentResponse> content,
+public record CursorPageResponseChangeLogDto(
+    List<DepartmentDto> content,
     String nextCursor,
     Long nextIdAfter,
     int size,
-    long totalElements,
+    Integer totalElements,
     boolean hasNext
 ) { }
