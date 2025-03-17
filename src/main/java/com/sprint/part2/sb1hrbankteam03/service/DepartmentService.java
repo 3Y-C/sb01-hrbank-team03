@@ -15,7 +15,5 @@ public interface DepartmentService {
       String cursor, int size, String sortField,
       String sortDirection);
 
-//  Map<String, Object> findDepartments(String nameOrDescription, Long idAfter,
-//      String cursor, int size, String sortField,
-//      String sortDirection);
+  void delete(Long id);
 }

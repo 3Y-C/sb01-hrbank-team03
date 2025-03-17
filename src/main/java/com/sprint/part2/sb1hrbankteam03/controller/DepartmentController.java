@@ -41,19 +41,6 @@ public class DepartmentController {
     return ResponseEntity.status(HttpStatus.OK).body(Response);
   }
 
-//  @GetMapping
-//  public ResponseEntity<Map<String, Object>> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
-//    Map<String, Object> response = departmentService.findDepartments(
-//        departmentGetRequest.nameOrDescription(),
-//        departmentGetRequest.idAfter(),
-//        departmentGetRequest.cursor(),
-//        departmentGetRequest.size(),
-//        departmentGetRequest.sortField(),
-//        departmentGetRequest.sortDirection()
-//    );
-//    return ResponseEntity.status(HttpStatus.OK).body(response);
-//  }
-
   @GetMapping
   public ResponseEntity<CursorPageResponseChangeLogDto> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
     CursorPageResponseChangeLogDto response = departmentService.findDepartments(
@@ -67,10 +54,10 @@ public class DepartmentController {
   }
 
   @DeleteMapping("/{id}")
-  public void delete(@PathVariable Long id){
-
+  public ResponseEntity<Void> delete(@PathVariable Long id){
+    departmentService.delete(id);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
-
 
 
 

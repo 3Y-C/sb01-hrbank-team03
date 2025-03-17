@@ -9,9 +9,7 @@ import com.sprint.part2.sb1hrbankteam03.mapper.DepartmentMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
 import java.time.LocalDate;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +55,17 @@ public class DepartmentServiceImpl implements DepartmentService{
         departmentUpdateRequest.establishedDate());
     Integer count = departmentRepository.countEmployeesByDepartmentId(department.getId());
     return departmentMapper.toDto(department, count);
+  }
+
+  @Transactional
+  public void delete(Long id){
+    departmentRepository.findById(id)
+        .orElseThrow(() -> new NoSuchElementException("department with id"  + id + "not found"));
+    Integer employeeCount = departmentRepository.countEmployeesByDepartmentId(id);
+    if(employeeCount > 0){
+      throw new IllegalStateException("직원이 있는 부서는 삭제할 수 없습니다.");
+    }
+    departmentRepository.deleteById(id);
   }
 
 
