@@ -3,7 +3,9 @@ package com.sprint.part2.sb1hrbankteam03.stroage;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import java.io.InputStream;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class LocalFileStorage implements FileStorage{
 
   @Override

@@ -6,6 +6,7 @@ import com.sprint.part2.sb1hrbankteam03.entity.Backup;
 import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
 
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
+import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.mapper.BackupMapper;
@@ -131,7 +132,7 @@ public class BackupServiceImlp implements BackupService {
       //임시 파일 생성
       Path tempFile = Files.createTempFile(fileName, ".csv");
 
-      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length());
+      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length(), FileCategory.DOCUMENT);
 
       //버퍼 writer 로 백업 데이터 쓰기
       try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
@@ -182,7 +183,7 @@ public class BackupServiceImlp implements BackupService {
 
       //메타데이터 생성
       FileMetaData errorLogFile = new FileMetaData(fileName, fileType,
-          (long) errorMessage.getBytes().length);
+          (long) errorMessage.getBytes().length, FileCategory.DOCUMENT);
 
       // 로그 파일 저장
       fileStorage.put(errorLogFile.getId(), errorMessage.getBytes(StandardCharsets.UTF_8));
