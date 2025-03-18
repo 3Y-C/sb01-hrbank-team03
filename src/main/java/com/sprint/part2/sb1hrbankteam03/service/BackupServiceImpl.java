@@ -1,6 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.service;
 
 import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
 import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
@@ -10,6 +11,7 @@ import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.mapper.BackupMapper;
+import com.sprint.part2.sb1hrbankteam03.mapper.PageResponseMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.BackupRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
@@ -20,6 +22,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -42,6 +45,7 @@ public class BackupServiceImpl implements BackupService {
   private final EmployeeRepository employeeRepository;
   private final FileMetaDataRepository fileMetaDataRepository;
   private final FileStorage fileStorage;
+  private final PageResponseMapper pageResponseMapper;
 
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -84,7 +88,7 @@ public class BackupServiceImpl implements BackupService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<BackupDto> getBackups(RequestBackupDto requestBackupDto) {
+  public CursorPageResponseBackupDto getBackups(RequestBackupDto requestBackupDto) {
     if (requestBackupDto == null) {
       throw new IllegalArgumentException("requestBackupDto cannot be null");
     }
@@ -98,13 +102,38 @@ public class BackupServiceImpl implements BackupService {
     if (requestBackupDto.getStartedAtTo() != null) {
       startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
     }
+    int size = (int) requestBackupDto.getSize();
+    Long nextIdAfter = requestBackupDto.getCursor()==null? null : Long.parseLong(requestBackupDto.getCursor());
 
-    return backupRepository.findByConditions(
+    Pageable pageable = PageRequest.of(0, size + 1);
+
+    List<Backup> backups = backupRepository.findByConditions(
         BackupStatus.valueOf(requestBackupDto.getStatus()),
         requestBackupDto.getWorker(),
         startedAtFrom,
-        startedAtTo
-    ).stream().map(backupMapper::toDto).toList();
+        startedAtTo,
+        nextIdAfter,
+        pageable);
+
+    boolean hasNext = false;
+    Long nextCursor = null;
+
+    // 요청한 크기보다 많은 결과가 있으면 다음 페이지가 있다는 의미
+    if (backups.size() > size) {
+      hasNext = true;
+      backups = backups.subList(0, size); // 마지막 항목은 제외
+    }
+    // 다음 커서 값 설정 (마지막 메시지의 id)
+    if (!backups.isEmpty() && hasNext) {
+      nextCursor = backups.get(backups.size() - 1).getId();
+    }
+
+    List<BackupDto> backupDtos = backups.stream()
+        .map(backupMapper::toDto)
+        .toList();
+
+    return backupMapper.toPageDto(backupDtos, nextCursor, nextIdAfter , size,
+        backupRepository.count(), hasNext);
   }
 
   @Override
@@ -219,7 +248,8 @@ public class BackupServiceImpl implements BackupService {
 
       backupRepository.save(backup);
     } catch (Exception ex) {
-      System.out.println("[Backup Error] 백업 파일 생성 실패: "+ ex.getMessage() + "\n" + ex.getStackTrace());
+      System.out.println(
+          "[Backup Error] 백업 파일 생성 실패: " + ex.getMessage() + "\n" + ex.getStackTrace());
     }
   }
 }
