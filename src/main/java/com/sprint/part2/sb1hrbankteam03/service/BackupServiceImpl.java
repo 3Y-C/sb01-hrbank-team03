@@ -1,7 +1,8 @@
 package com.sprint.part2.sb1hrbankteam03.service;
 
-import com.sprint.part2.sb1hrbankteam03.dto.BackupDto;
-import com.sprint.part2.sb1hrbankteam03.dto.RequestBackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
 import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
 
@@ -25,7 +26,12 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +45,7 @@ public class BackupServiceImpl implements BackupService {
   private final FileStorage fileStorage;
 
   @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public BackupDto createBackup(String workerIp) {
 
     //가장 최근 성공한 백업 이력을 가져온다
@@ -77,7 +84,8 @@ public class BackupServiceImpl implements BackupService {
   }
 
   @Override
-  public List<BackupDto> getBackups(RequestBackupDto requestBackupDto) {
+  @Transactional(readOnly = true)
+  public CursorPageResponseBackupDto getBackups(RequestBackupDto requestBackupDto) {
     if (requestBackupDto == null) {
       throw new IllegalArgumentException("requestBackupDto cannot be null");
     }
@@ -92,15 +100,109 @@ public class BackupServiceImpl implements BackupService {
       startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
     }
 
-    return backupRepository.findByConditions(
+    int size = (int) requestBackupDto.getSize();
+    Long nextIdAfter =
+        requestBackupDto.getCursor() == null ? null : Long.parseLong(requestBackupDto.getCursor());
+
+    LocalDateTime cursorDateAfter = null;
+
+    if (nextIdAfter != null) {
+      Backup nextCursorBackup = backupRepository.findById(nextIdAfter).orElse(null);
+      if (nextCursorBackup != null) {
+        if (requestBackupDto.getSortField().equals("startedAt")) {
+          cursorDateAfter = nextCursorBackup.getStartAt();
+        } else {
+          cursorDateAfter = nextCursorBackup.getEndAt();
+        }
+      }
+    }
+
+    int pageSize = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
+
+    PageRequest pageRequest = PageRequest.of(0, pageSize);
+
+    List<Backup> backups; //결과를 담을 리스트
+
+    //시작시간 기준
+    if (requestBackupDto.getSortField().equals("startedAt")) {
+      //오름차순
+      if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
+        backups = backupRepository.findByConditionsOrderByStartAtAsc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      } else {
+        //내림차순
+        backups = backupRepository.findByConditionsOrderByStartAtDesc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      }
+    } else {
+      //종료 시간 기준
+      //오름차순
+      if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
+        backups = backupRepository.findByConditionsOrderByEndAtAsc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      } else {
+        //내림차순
+        backups = backupRepository.findByConditionsOrderByEndAtDesc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      }
+    }
+
+    //다음 페이지 존재하는지 확인하기
+    boolean hasNext = false;
+    Long nextCursor = null;
+
+    if (backups.size() > pageSize) {
+      hasNext = true;
+      backups = backups.subList(0, pageSize);
+      nextCursor = backups.get(backups.size() - 1).getId();
+    }
+
+    List<BackupDto> backupDtos = backups.stream()
+        .map(backupMapper::toDto)
+        .toList();
+
+    //조회 결과 총 개수
+    long totalElements = backupRepository.countByConditions(
         BackupStatus.valueOf(requestBackupDto.getStatus()),
         requestBackupDto.getWorker(),
         startedAtFrom,
         startedAtTo
-    ).stream().map(backupMapper::toDto).toList();
+    );
+
+    return backupMapper.toPageDto(backupDtos, nextCursor ==null?null:nextCursor.toString(), nextIdAfter, size, totalElements,
+        hasNext);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public BackupDto getLatestBackup(String status) {
     BackupStatus backupStatus = BackupStatus.valueOf(status);
 
@@ -132,27 +234,34 @@ public class BackupServiceImpl implements BackupService {
       //임시 파일 생성
       Path tempFile = Files.createTempFile(fileName, ".csv");
 
-      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length(), FileCategory.DOCUMENT);
+      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length(),
+          FileCategory.DOCUMENT);
 
       //버퍼 writer 로 백업 데이터 쓰기
       try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
 
-        //todo - 페이지네이션으로 배치 작업
+        int pageSize = 100;
+        int pageNumber = 0;
+        Page<Employee> employeePage;
 
-        //모든 직원 가져와서 작성
-        //todo - 변경 안 된 건 그전 파일에서 그대로 가져오고, 변경된 부분만 수정하도록 할 수 있을까?
-        List<Employee> allEmployees = employeeRepository.findAll();
-        for (Employee employee : allEmployees) {
-          writer.write(String.format("%d,%s,%s,%s,%s,%s,%s\n",
-              employee.getId(),
-              employee.getName(),
-              employee.getEmail(),
-              employee.getDepartment(),
-              employee.getPosition(),
-              employee.getHireDate(),
-              employee.getStatus()
-          ));
-        }
+        do {
+          //모든 직원 페이지네이션으로 가져와서 작성
+          Pageable pageable = PageRequest.of(pageNumber, pageSize);
+          employeePage = employeeRepository.findAll(pageable);
+          for (Employee employee : employeePage.getContent()) {
+            writer.write(String.format("%d,%s,%s,%s,%s,%s,%s\n",
+                employee.getId(),
+                employee.getName(),
+                employee.getEmail(),
+                employee.getDepartment(),
+                employee.getPosition(),
+                employee.getHireDate(),
+                employee.getStatus()
+            ));
+          }
+
+          pageNumber++;
+        } while (employeePage.hasNext());
       }
       try (InputStream inputStream = Files.newInputStream(tempFile)) {
         fileStorage.put(backupFile.getId(), inputStream.readAllBytes());
@@ -169,8 +278,14 @@ public class BackupServiceImpl implements BackupService {
       backup.setBackupFile(savedFile);
 
     } catch (Exception e) {
-      //실패한 경우
+      handleBackupFailure(e, backup);
+    }
+    return backupRepository.save(backup);
+  }
 
+  //실패한 경우
+  private void handleBackupFailure(Exception e, Backup backup) {
+    try {
       //에러 log 파일 생성
       String fileName = "backup_error_" + LocalDateTime.now().toString().replace(":", "-") + ".log";
       String fileType = "text/plain";
@@ -195,7 +310,12 @@ public class BackupServiceImpl implements BackupService {
       backup.setStatus(BackupStatus.FAILED);
       backup.setEndAt(LocalDateTime.now());
       backup.setBackupFile(savedErrorFile);
+
+      backupRepository.save(backup);
+    } catch (Exception ex) {
+      System.out.println(
+          "[Backup Error] 백업 파일 생성 실패: " + ex.getMessage() + "\n" + Arrays.toString(
+              ex.getStackTrace()));
     }
-    return backupRepository.save(backup);
   }
 }

@@ -1,9 +1,9 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
-import com.sprint.part2.sb1hrbankteam03.dto.BackupDto;
-import com.sprint.part2.sb1hrbankteam03.dto.RequestBackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.service.BackupService;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,13 +20,13 @@ public class BackupController {
 
   //데이터 백업 목록 전체 조회
   @GetMapping
-  public List<BackupDto> getBackups(@RequestParam(required = false) String worker,
+  public CursorPageResponseBackupDto getBackups(@RequestParam(required = false) String worker,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String startedAtFrom, // date-time
       @RequestParam(required = false) String startedAtTo, // date-time
       @RequestParam(required = false) int idAfter, //int64
       @RequestParam(required = false) String cursor,
-      @RequestParam(required = false) int size, //int32
+      @RequestParam(required = false, defaultValue = "10") int size, //int32
       @RequestParam(required = false, defaultValue = "startedAt") String sortField,
       @RequestParam(required = false, defaultValue = "DESC") String sortDirection){
 
