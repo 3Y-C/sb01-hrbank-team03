@@ -25,7 +25,12 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +44,7 @@ public class BackupServiceImpl implements BackupService {
   private final FileStorage fileStorage;
 
   @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public BackupDto createBackup(String workerIp) {
 
     //가장 최근 성공한 백업 이력을 가져온다
@@ -77,6 +83,7 @@ public class BackupServiceImpl implements BackupService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<BackupDto> getBackups(RequestBackupDto requestBackupDto) {
     if (requestBackupDto == null) {
       throw new IllegalArgumentException("requestBackupDto cannot be null");
@@ -101,6 +108,7 @@ public class BackupServiceImpl implements BackupService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public BackupDto getLatestBackup(String status) {
     BackupStatus backupStatus = BackupStatus.valueOf(status);
 
@@ -132,27 +140,34 @@ public class BackupServiceImpl implements BackupService {
       //임시 파일 생성
       Path tempFile = Files.createTempFile(fileName, ".csv");
 
-      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length(), FileCategory.DOCUMENT);
+      FileMetaData backupFile = new FileMetaData(fileName, fileType, tempFile.toFile().length(),
+          FileCategory.DOCUMENT);
 
       //버퍼 writer 로 백업 데이터 쓰기
       try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
 
-        //todo - 페이지네이션으로 배치 작업
+        int pageSize = 100;
+        int pageNumber = 0;
+        Page<Employee> employeePage;
 
-        //모든 직원 가져와서 작성
-        //todo - 변경 안 된 건 그전 파일에서 그대로 가져오고, 변경된 부분만 수정하도록 할 수 있을까?
-        List<Employee> allEmployees = employeeRepository.findAll();
-        for (Employee employee : allEmployees) {
-          writer.write(String.format("%d,%s,%s,%s,%s,%s,%s\n",
-              employee.getId(),
-              employee.getName(),
-              employee.getEmail(),
-              employee.getDepartment(),
-              employee.getPosition(),
-              employee.getHireDate(),
-              employee.getStatus()
-          ));
-        }
+        do {
+          //모든 직원 페이지네이션으로 가져와서 작성
+          Pageable pageable = PageRequest.of(pageNumber, pageSize);
+          employeePage = employeeRepository.findAll(pageable);
+          for (Employee employee : employeePage.getContent()) {
+            writer.write(String.format("%d,%s,%s,%s,%s,%s,%s\n",
+                employee.getId(),
+                employee.getName(),
+                employee.getEmail(),
+                employee.getDepartment(),
+                employee.getPosition(),
+                employee.getHireDate(),
+                employee.getStatus()
+            ));
+          }
+
+          pageNumber++;
+        } while (employeePage.hasNext());
       }
       try (InputStream inputStream = Files.newInputStream(tempFile)) {
         fileStorage.put(backupFile.getId(), inputStream.readAllBytes());
@@ -169,8 +184,14 @@ public class BackupServiceImpl implements BackupService {
       backup.setBackupFile(savedFile);
 
     } catch (Exception e) {
-      //실패한 경우
+      handleBackupFailure(e, backup);
+    }
+    return backupRepository.save(backup);
+  }
 
+  //실패한 경우
+  private void handleBackupFailure(Exception e, Backup backup) {
+    try {
       //에러 log 파일 생성
       String fileName = "backup_error_" + LocalDateTime.now().toString().replace(":", "-") + ".log";
       String fileType = "text/plain";
@@ -195,7 +216,10 @@ public class BackupServiceImpl implements BackupService {
       backup.setStatus(BackupStatus.FAILED);
       backup.setEndAt(LocalDateTime.now());
       backup.setBackupFile(savedErrorFile);
+
+      backupRepository.save(backup);
+    } catch (Exception ex) {
+      System.out.println("[Backup Error] 백업 파일 생성 실패: "+ ex.getMessage() + "\n" + ex.getStackTrace());
     }
-    return backupRepository.save(backup);
   }
 }
