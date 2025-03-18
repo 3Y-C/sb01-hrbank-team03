@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EmployeeChangeDetailRepository extends JpaRepository<EmployeeChangeDetail, Long> {
   List<EmployeeChangeDetail> findByEmployeeHistoryId(Long historyId);
+
 }

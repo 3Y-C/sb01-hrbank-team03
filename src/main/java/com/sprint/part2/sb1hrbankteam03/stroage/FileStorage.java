@@ -1,9 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.stroage;
 
-import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import java.io.InputStream;
-import java.util.UUID;
-import org.springframework.http.ResponseEntity;
 
 public interface FileStorage {
 
@@ -11,5 +8,5 @@ public interface FileStorage {
 
   InputStream get(Long fileMetadataId);
 
-  ResponseEntity<?> download(FileMetaData fileMetaData);
+  void delete(Long fileMetadataId);
 }
