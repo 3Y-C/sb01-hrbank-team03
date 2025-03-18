@@ -102,3 +102,4 @@ $RECYCLE.BIN/
 
 ### sensitive ###
 /src/main/resources/application-dev.yaml
+/src/main/resources/application.yml
