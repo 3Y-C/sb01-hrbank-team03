@@ -24,7 +24,7 @@ public class BackupController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String startedAtFrom, // date-time
       @RequestParam(required = false) String startedAtTo, // date-time
-      @RequestParam(required = false) int idAfter, //int64
+      @RequestParam(required = false, defaultValue = "0") long idAfter, //int64
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false, defaultValue = "10") int size, //int32
       @RequestParam(required = false, defaultValue = "startedAt") String sortField,
@@ -44,7 +44,7 @@ public class BackupController {
   }
 
   //최근 백업 정보 조회
-  @GetMapping("/api/backups/latest")
+  @GetMapping("/latest")
   public BackupDto getLatestBackup(@RequestParam(required = false, defaultValue = "COMPLETED") String status){
     return backupService.getLatestBackup(status);
   }
