@@ -30,11 +30,11 @@ public class EmployeeHistory extends BaseEntity {
   ChangeType changeType;
 
   @Column(name = "memo")
-  String description;
+  String memo; //description > memo
 
   @Column(name = "ip_address",nullable = false)
   String ipAddress;
 
   @Column(name = "edited_at",nullable = false)
-  Instant editedAt;
+  Instant at; //editedAt > at
 }

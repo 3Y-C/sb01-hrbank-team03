@@ -7,11 +7,11 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class EmployeeHistoryDto {
+public class ChangeLogDto { //직원 정보 수정 이력 (목록 조회용)
   private Long id;
+  private ChangeType type;
   private String employeeNumber;
-  private ChangeType changeType;
-  private String description;
+  private String memo;
   private String ipAddress;
-  private Instant editedAt;
+  private Instant at;
 }
