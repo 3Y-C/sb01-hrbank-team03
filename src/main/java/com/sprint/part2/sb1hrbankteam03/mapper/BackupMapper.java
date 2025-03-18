@@ -1,6 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.mapper;
 
-import com.sprint.part2.sb1hrbankteam03.dto.BackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
 import org.springframework.stereotype.Component;
 

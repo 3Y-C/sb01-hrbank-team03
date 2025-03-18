@@ -1,7 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.service;
 
-import com.sprint.part2.sb1hrbankteam03.dto.BackupDto;
-import com.sprint.part2.sb1hrbankteam03.dto.RequestBackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
 import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
 
