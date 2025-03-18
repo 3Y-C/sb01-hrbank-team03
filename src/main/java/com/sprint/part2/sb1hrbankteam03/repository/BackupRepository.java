@@ -20,16 +20,17 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       + "WHERE (:status IS NULL OR b.status = :status) " +
       "AND (:workerIp IS NULL OR b.workerIp LIKE CONCAT('%', :workerIp, '%')) " +
       "AND (:startAtFrom IS NULL OR b.startAt >= :startAtFrom) " +
-      "AND (:startAtTo IS NULL OR b.startAt <= :startAtTo)" +
-      "AND (:cursorId IS NULL OR b.id < :cursorId) " +
-    "ORDER BY b.startAt ASC, b.id ASC ")
+      "AND (:startAtTo IS NULL OR b.startAt <= :startAtTo) "+
+      "AND (:cursorStartAt IS NULL OR b.startAt > :cursorStartAt " +
+      "     OR (b.startAt = :cursorStartAt AND b.id > :cursorId))" +
+      "ORDER BY b.startAt ASC, b.id ASC")
   List<Backup> findByConditionsOrderByStartAtAsc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
       @Param("startAtFrom") LocalDateTime startAtFrom,
       @Param("startAtTo") LocalDateTime startAtTo,
       @Param("cursorStartAt") LocalDateTime cursorStartAt,
-      @Param("cursor") Long cursor,
+      @Param("cursorId") Long cursorId,
       Pageable pageable);
 
 
@@ -39,15 +40,16 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp IS NULL OR b.workerIp LIKE CONCAT('%', :workerIp, '%')) " +
       "AND (:startAtFrom IS NULL OR b.startAt >= :startAtFrom) " +
       "AND (:startAtTo IS NULL OR b.startAt <= :startAtTo)" +
-      "AND (:cursorId IS NULL OR b.id < :cursorId) "+
-  "ORDER BY b.startAt DESC, b.id DESC ")
+      "AND (:cursorStartAt IS NULL OR b.startAt < :cursorStartAt " +
+      "     OR (b.startAt = :cursorStartAt AND b.id < :cursorId))" +
+  "ORDER BY b.startAt DESC, b.id DESC")
   List<Backup> findByConditionsOrderByStartAtDesc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
       @Param("startAtFrom") LocalDateTime startAtFrom,
       @Param("startAtTo") LocalDateTime startAtTo,
       @Param("cursorStartAt") LocalDateTime cursorStartAt,
-      @Param("cursor") Long cursor,
+      @Param("cursorId") Long cursorId,
       Pageable pageable);
 
 
@@ -57,15 +59,16 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp IS NULL OR b.workerIp LIKE CONCAT('%', :workerIp, '%')) " +
       "AND (:startAtFrom IS NULL OR b.startAt >= :startAtFrom) " +
       "AND (:startAtTo IS NULL OR b.startAt <= :startAtTo)" +
-      "AND (:cursorId IS NULL OR b.id < :cursorId) " +
-    "ORDER BY b.endAt ASC, b.id ASC ")
+      "AND (:cursorEndAt IS NULL OR b.endAt > :cursorEndAt " +
+      "     OR (b.endAt = :cursorEndAt AND b.id > :cursorId))" +
+    "ORDER BY b.endAt ASC, b.id ASC")
   List<Backup> findByConditionsOrderByEndAtAsc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
       @Param("startAtFrom") LocalDateTime startAtFrom,
       @Param("startAtTo") LocalDateTime startAtTo,
       @Param("cursorEndAt") LocalDateTime cursorEndAt,
-      @Param("cursor") Long cursorId,
+      @Param("cursorId") Long cursorId,
       Pageable pageable);
 
 
@@ -75,7 +78,8 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp IS NULL OR b.workerIp LIKE CONCAT('%', :workerIp, '%')) " +
       "AND (:startAtFrom IS NULL OR b.startAt >= :startAtFrom) " +
       "AND (:startAtTo IS NULL OR b.startAt <= :startAtTo)" +
-      "AND (:cursorId IS NULL OR b.id < :cursorId)"  +
+      "AND (:cursorEndAt IS NULL OR b.endAt < :cursorEndAt " +
+      "     OR (b.endAt = :cursorEndAt AND b.id < :cursorId))" +
     "ORDER BY b.endAt DESC, b.id DESC")
   List<Backup> findByConditionsOrderByEndAtDesc(
       @Param("status") BackupStatus status,
@@ -83,7 +87,7 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       @Param("startAtFrom") LocalDateTime startAtFrom,
       @Param("startAtTo") LocalDateTime startAtTo,
       @Param("cursorEndAt") LocalDateTime cursorEndAt,
-      @Param("cursor") Long cursorId,
+      @Param("cursorId") Long cursorId,
       Pageable pageable);
 
 
@@ -104,18 +108,5 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       @Param("startAtFrom") LocalDateTime startAtFrom,
       @Param("startAtTo") LocalDateTime startAtTo
   );
-
-/*  @Query(value = "SELECT b FROM Backup b " +
-      "WHERE b.status = :status " +
-      "and b.startAt between :startedAtFrom and :startedAtTo " +
-      "and b.workerIp like :workerIp" +
-      " and (:cursor IS NULL OR b.startAt < :cursor)"+ //Default
-      "ORDER BY b.startAt DESC") //Default
-  List<Backup> findByStatusOrderByEndAtDesc(
-      @Param("workerIp") String workerIp,
-      @Param("backupStatus") BackupStatus status,
-      @Param("startedAtFrom") LocalDateTime startAtFrom,
-      @Param("startedAtTo") LocalDateTime startAtTo,
-      Pageable pageable);*/
 
 }
