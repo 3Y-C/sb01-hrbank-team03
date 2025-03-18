@@ -61,7 +61,7 @@ public class BackupServiceImpl implements BackupService {
 
     //가져왔다면 가장 최근 변경 이력을 가져온다.
     List<EmployeeHistory> byEditedHistoryAtAfter = employeeHistoryRepository
-        .findByEditedAtAfterOrderByEditedAtDesc(latestBackup.getEndAt().toInstant(ZoneOffset.UTC));
+        .findByAtAfterOrderByAtDesc(latestBackup.getEndAt().toInstant(ZoneOffset.UTC));
     //todo- zone offset 논의필요?
 
     //최근 변경 이력이 마지막 백업(건너뛰지않은)시간보다 나중이라면 변경이 생긴 것이므로, 백업 파일을 만들어야한다.
