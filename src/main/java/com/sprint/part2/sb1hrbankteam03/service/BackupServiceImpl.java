@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -101,25 +102,24 @@ public class BackupServiceImpl implements BackupService {
     }
 
     int size = (int) requestBackupDto.getSize();
-    Long nextIdAfter =
-        requestBackupDto.getCursor() == null ? null : Long.parseLong(requestBackupDto.getCursor());
+    Long cursor =
+        requestBackupDto.getCursor() != null ? Long.parseLong(requestBackupDto.getCursor()) : null;
 
+    // 커서가 있는 경우 해당 Backup 엔티티 조회
     LocalDateTime cursorDateAfter = null;
-
-    if (nextIdAfter != null) {
-      Backup nextCursorBackup = backupRepository.findById(nextIdAfter).orElse(null);
-      if (nextCursorBackup != null) {
-        if (requestBackupDto.getSortField().equals("startedAt")) {
-          cursorDateAfter = nextCursorBackup.getStartAt();
-        } else {
-          cursorDateAfter = nextCursorBackup.getEndAt();
-        }
+    if (cursor != null) {
+      Optional<Backup> cursorBackup = backupRepository.findById(cursor);
+      if (cursorBackup.isPresent()) {
+        cursorDateAfter = cursorBackup.get().getStartAt();
       }
     }
 
     int pageSize = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
 
     PageRequest pageRequest = PageRequest.of(0, pageSize);
+
+    BackupStatus backupStatus = requestBackupDto.getStatus() == null ? null
+        : BackupStatus.valueOf(requestBackupDto.getStatus());
 
     List<Backup> backups; //결과를 담을 리스트
 
@@ -128,23 +128,23 @@ public class BackupServiceImpl implements BackupService {
       //오름차순
       if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
         backups = backupRepository.findByConditionsOrderByStartAtAsc(
-            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            backupStatus,
             requestBackupDto.getWorker(),
             startedAtFrom,
             startedAtTo,
             cursorDateAfter,
-            nextIdAfter,
+            cursor,
             pageRequest
         );
       } else {
         //내림차순
         backups = backupRepository.findByConditionsOrderByStartAtDesc(
-            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            backupStatus,
             requestBackupDto.getWorker(),
             startedAtFrom,
             startedAtTo,
             cursorDateAfter,
-            nextIdAfter,
+            cursor,
             pageRequest
         );
       }
@@ -153,23 +153,23 @@ public class BackupServiceImpl implements BackupService {
       //오름차순
       if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
         backups = backupRepository.findByConditionsOrderByEndAtAsc(
-            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            backupStatus,
             requestBackupDto.getWorker(),
             startedAtFrom,
             startedAtTo,
             cursorDateAfter,
-            nextIdAfter,
+            cursor,
             pageRequest
         );
       } else {
         //내림차순
         backups = backupRepository.findByConditionsOrderByEndAtDesc(
-            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            backupStatus,
             requestBackupDto.getWorker(),
             startedAtFrom,
             startedAtTo,
             cursorDateAfter,
-            nextIdAfter,
+            cursor,
             pageRequest
         );
       }
@@ -197,7 +197,8 @@ public class BackupServiceImpl implements BackupService {
         startedAtTo
     );
 
-    return backupMapper.toPageDto(backupDtos, nextCursor ==null?null:nextCursor.toString(), nextIdAfter, size, totalElements,
+    return backupMapper.toPageDto(backupDtos, nextCursor == null ? null : nextCursor.toString(),
+        cursor, size, totalElements,
         hasNext);
   }
 
@@ -264,19 +265,18 @@ public class BackupServiceImpl implements BackupService {
         } while (employeePage.hasNext());
       }
       try (InputStream inputStream = Files.newInputStream(tempFile)) {
-        fileStorage.put(backupFile.getId(), inputStream.readAllBytes());
+        //파일 메타데이터 저장
+        FileMetaData savedFile = fileMetaDataRepository.save(backupFile);
+        //실제 파일 넣은 후 삭제
+        Files.delete(tempFile);
+
+        fileStorage.put(savedFile.getId(), inputStream.readAllBytes());
+        //완료된 경우 backup 상태 바꾸고 파일 메타 저장
+        backup.setStatus(BackupStatus.COMPLETED);
+        backup.setEndAt(LocalDateTime.now());
+        backup.setBackupFile(savedFile);
+        return backupRepository.save(backup);
       }
-
-      //파일 메타데이터 저장
-      FileMetaData savedFile = fileMetaDataRepository.save(backupFile);
-      //실제 파일 넣은 후 삭제
-      Files.delete(tempFile);
-
-      //완료된 경우 backup 상태 바꾸고 파일 메타 저장
-      backup.setStatus(BackupStatus.COMPLETED);
-      backup.setEndAt(LocalDateTime.now());
-      backup.setBackupFile(savedFile);
-
     } catch (Exception e) {
       handleBackupFailure(e, backup);
     }
@@ -299,19 +299,18 @@ public class BackupServiceImpl implements BackupService {
       //메타데이터 생성
       FileMetaData errorLogFile = new FileMetaData(fileName, fileType,
           (long) errorMessage.getBytes().length, FileCategory.DOCUMENT);
-
-      // 로그 파일 저장
-      fileStorage.put(errorLogFile.getId(), errorMessage.getBytes(StandardCharsets.UTF_8));
-
       // 로그파일 메타데이터 저장
       FileMetaData savedErrorFile = fileMetaDataRepository.save(errorLogFile);
+
+      // 로그 파일 저장
+      fileStorage.put(savedErrorFile.getId(), errorMessage.getBytes(StandardCharsets.UTF_8));
 
       // 백업 상태 실패로 업데이트
       backup.setStatus(BackupStatus.FAILED);
       backup.setEndAt(LocalDateTime.now());
       backup.setBackupFile(savedErrorFile);
-
       backupRepository.save(backup);
+
     } catch (Exception ex) {
       System.out.println(
           "[Backup Error] 백업 파일 생성 실패: " + ex.getMessage() + "\n" + Arrays.toString(
