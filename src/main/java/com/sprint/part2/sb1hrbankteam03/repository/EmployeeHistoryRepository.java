@@ -37,5 +37,5 @@ public interface EmployeeHistoryRepository extends JpaRepository<EmployeeHistory
   long countByEditedAtBetween(LocalDateTime fromDate, LocalDateTime toDate);
 
   //변경 날짜가 instant 기준으로 이후인 모든 변경 이력을, 변경 날짜 기준으로 내림차순으로 가져옴
-  List<EmployeeHistory> findByEditedAtAfterOrderByEditedAtDesc(Instant instant);
+  List<EmployeeHistory> findByAtAfterOrderByAtDesc(Instant instant);
 }
