@@ -197,7 +197,7 @@ public class BackupServiceImpl implements BackupService {
         startedAtTo
     );
 
-    return backupMapper.toPageDto(backupDtos, nextCursor, nextIdAfter, size, totalElements,
+    return backupMapper.toPageDto(backupDtos, nextCursor ==null?null:nextCursor.toString(), nextIdAfter, size, totalElements,
         hasNext);
   }
 

@@ -20,7 +20,7 @@ public class BackupMapper {
     );
   }
 
-  public CursorPageResponseBackupDto toPageDto(List<BackupDto> backups, Long nextCursor,
+  public CursorPageResponseBackupDto toPageDto(List<BackupDto> backups, String nextCursor,
       Long nextIdAfter, int size, Long totalElements, boolean hasNext) {
     return new CursorPageResponseBackupDto(
         backups,
