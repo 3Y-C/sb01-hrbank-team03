@@ -54,6 +54,13 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
     return employeeHistoryRepository.save(history);
   }
 
+  public void saveChangeDetails(EmployeeHistory history, List<EmployeeChangeDetail> details) {
+    for (EmployeeChangeDetail d : details) {
+      d.setEmployeeHistory(history);
+    }
+    employeeChangeDetailRepository.saveAll(details);
+  }
+
 
   @Transactional(readOnly = true)
   public PageResponse<ChangeLogDto> getChangeLogs(
