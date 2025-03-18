@@ -13,7 +13,7 @@ import lombok.Setter;
 public class CursorPageResponseEmployeeDto {
   private List<EmployeeDto> content;
   private String nextCursor;
-  private int nextIdAfter;
+  private Long nextIdAfter;
   private int size;
   private int totalElements;
   private boolean hasNest;

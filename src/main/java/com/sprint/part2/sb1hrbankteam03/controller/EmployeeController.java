@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
@@ -29,22 +30,22 @@ public class EmployeeController {
   private final EmployeeServiceImpl employeeService;
 
   @GetMapping
-  public ResponseEntity<List<EmployeeDto>> getEmployees(
+  public ResponseEntity<CursorPageResponseEmployeeDto> getEmployees(
       @RequestParam(required = false) String keyword,  // 이름 또는 이메일 (부분 일치)
       @RequestParam(required = false) String department,  // 부서 (부분 일치)
       @RequestParam(required = false) String position,  // 직함 (부분 일치)
       @RequestParam(required = false) String employeeNumber,  // 사원번호 (부분 일치)
       @RequestParam(required = false) String startDate,  // 입사일 범위 시작
       @RequestParam(required = false) String endDate,  // 입사일 범위 끝
-      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String status, // 상태 (완전 일치)
       @RequestParam(defaultValue = "name") String sortField,
       @RequestParam(defaultValue = "asc") String sortDirection,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "10") int size
 
-  ) { // 상태 (완전 일치)
+  ) {
 
-    List<EmployeeDto> employees = employeeService.getEmployees(keyword, department, position,
+    CursorPageResponseEmployeeDto employees = employeeService.getEmployees(keyword, department, position,
         employeeNumber, startDate, endDate, status,sortField,sortDirection,cursor,size);
 
     return ResponseEntity.ok(employees);

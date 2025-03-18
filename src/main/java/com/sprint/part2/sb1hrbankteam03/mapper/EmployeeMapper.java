@@ -1,7 +1,9 @@
 package com.sprint.part2.sb1hrbankteam03.mapper;
 
+import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,6 +21,19 @@ public class EmployeeMapper {
         savedEmployee.getHireDate().toString(),
         savedEmployee.getStatus().toString(),
         null
+    );
+  }
+
+  public CursorPageResponseEmployeeDto toPageDto(List<EmployeeDto> employeeDtoList,
+      String nextCursor, Long nextIdAfter, int size, Integer totalElements, boolean hasNext) {
+
+    return new CursorPageResponseEmployeeDto(
+        employeeDtoList,
+        nextCursor,
+        nextIdAfter,
+        size,
+        totalElements,
+        hasNext
     );
   }
 }
