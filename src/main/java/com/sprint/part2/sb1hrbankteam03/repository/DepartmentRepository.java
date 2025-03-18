@@ -16,15 +16,27 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   @Query("SELECT COUNT(e) FROM Employee e WHERE e.department.id = :departmentId")
   Integer countEmployeesByDepartmentId(@Param("departmentId") Long departmentId);
 
-  //부서 이름이나 설명을 기준으로 검색하고, 시작 ID 이상인 부서들을 조회
+//  //부서 이름이나 설명을 기준으로 검색하고, 시작 ID 이상인 부서들을 조회
+//  @Query("SELECT d FROM Department d WHERE " +
+//      "(:nameOrDescription IS NULL OR " +
+//      "LOWER(d.name) LIKE LOWER(CONCAT('%', :nameOrDescription, '%')) OR " +
+//      "LOWER(d.description) LIKE LOWER(CONCAT('%', :nameOrDescription, '%'))) " +
+//      "AND (:startId IS NULL OR d.id > :startId)")
+//  Page<Department> searchDepartments(@Param("nameOrDescription") String nameOrDescription,
+//      @Param("startId") Long startId,
+//      Pageable pageable);
+
+
+  //PostgreSql
   @Query("SELECT d FROM Department d WHERE " +
       "(:nameOrDescription IS NULL OR " +
-      "LOWER(d.name) LIKE LOWER(CONCAT('%', :nameOrDescription, '%')) OR " +
-      "LOWER(d.description) LIKE LOWER(CONCAT('%', :nameOrDescription, '%'))) " +
+      "d.name ILIKE '%' || :nameOrDescription || '%' OR " +
+      "d.description ILIKE '%' || :nameOrDescription || '%') " +
       "AND (:startId IS NULL OR d.id > :startId)")
   Page<Department> searchDepartments(@Param("nameOrDescription") String nameOrDescription,
       @Param("startId") Long startId,
       Pageable pageable);
+
 
   boolean existsByName(String name);
 
