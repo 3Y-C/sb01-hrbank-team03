@@ -99,7 +99,7 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
   }
 
   @Override
-  public long getChangeLogCount(LocalDateTime fromDate, LocalDateTime toDate) {
+  public long getChangeLogCount(Instant fromDate, Instant toDate) {
     return employeeHistoryRepository.countByAtBetween(fromDate, toDate);
   }
 }
