@@ -26,7 +26,7 @@ public class BackupController {
       @RequestParam(required = false) String startedAtTo, // date-time
       @RequestParam(required = false) int idAfter, //int64
       @RequestParam(required = false) String cursor,
-      @RequestParam(required = false) int size, //int32
+      @RequestParam(required = false, defaultValue = "10") int size, //int32
       @RequestParam(required = false, defaultValue = "startedAt") String sortField,
       @RequestParam(required = false, defaultValue = "DESC") String sortDirection){
 

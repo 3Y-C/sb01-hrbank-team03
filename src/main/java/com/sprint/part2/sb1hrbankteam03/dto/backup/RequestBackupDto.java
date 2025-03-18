@@ -5,15 +5,15 @@ import lombok.Getter;
 @Getter
 public class RequestBackupDto {
 
-  String worker;
-  String status;
-  String startedAtFrom;
-  String startedAtTo;
-  int idAfter;
-  String cursor;
-  int size;
-  String sortField;
-  String sortDirection;
+  private String worker;
+  private String status;
+  private String startedAtFrom;
+  private String startedAtTo;
+  private int idAfter;
+  private String cursor;
+  private int size;
+  private String sortField;
+  private String sortDirection;
 
   public RequestBackupDto(String worker, String status, String startedAtFrom, String startedAtTo,
       int idAfter, String cursor, int size, String sortField, String sortDirection) {

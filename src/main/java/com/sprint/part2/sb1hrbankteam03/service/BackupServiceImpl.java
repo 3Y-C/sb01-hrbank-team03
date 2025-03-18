@@ -11,7 +11,6 @@ import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.mapper.BackupMapper;
-import com.sprint.part2.sb1hrbankteam03.mapper.PageResponseMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.BackupRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
@@ -22,7 +21,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -45,7 +43,6 @@ public class BackupServiceImpl implements BackupService {
   private final EmployeeRepository employeeRepository;
   private final FileMetaDataRepository fileMetaDataRepository;
   private final FileStorage fileStorage;
-  private final PageResponseMapper pageResponseMapper;
 
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -102,29 +99,89 @@ public class BackupServiceImpl implements BackupService {
     if (requestBackupDto.getStartedAtTo() != null) {
       startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
     }
+
     int size = (int) requestBackupDto.getSize();
-    Long nextIdAfter = requestBackupDto.getCursor()==null? null : Long.parseLong(requestBackupDto.getCursor());
+    Long nextIdAfter =
+        requestBackupDto.getCursor() == null ? null : Long.parseLong(requestBackupDto.getCursor());
 
-    Pageable pageable = PageRequest.of(0, size + 1);
+    LocalDateTime cursorDateAfter = null;
 
-    List<Backup> backups = backupRepository.findByConditions(
-        BackupStatus.valueOf(requestBackupDto.getStatus()),
-        requestBackupDto.getWorker(),
-        startedAtFrom,
-        startedAtTo,
-        nextIdAfter,
-        pageable);
+    if (nextIdAfter != null) {
+      Backup nextCursorBackup = backupRepository.findById(nextIdAfter).orElse(null);
+      if (nextCursorBackup != null) {
+        if (requestBackupDto.getSortField().equals("startedAt")) {
+          cursorDateAfter = nextCursorBackup.getStartAt();
+        } else {
+          cursorDateAfter = nextCursorBackup.getEndAt();
+        }
+      }
+    }
 
+    int pageSize = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
+
+    PageRequest pageRequest = PageRequest.of(0, pageSize);
+
+    List<Backup> backups; //결과를 담을 리스트
+
+    //시작시간 기준
+    if (requestBackupDto.getSortField().equals("startedAt")) {
+      //오름차순
+      if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
+        backups = backupRepository.findByConditionsOrderByStartAtAsc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      } else {
+        //내림차순
+        backups = backupRepository.findByConditionsOrderByStartAtDesc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      }
+    } else {
+      //종료 시간 기준
+      //오름차순
+      if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
+        backups = backupRepository.findByConditionsOrderByEndAtAsc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      } else {
+        //내림차순
+        backups = backupRepository.findByConditionsOrderByEndAtDesc(
+            BackupStatus.valueOf(requestBackupDto.getStatus()),
+            requestBackupDto.getWorker(),
+            startedAtFrom,
+            startedAtTo,
+            cursorDateAfter,
+            nextIdAfter,
+            pageRequest
+        );
+      }
+    }
+
+    //다음 페이지 존재하는지 확인하기
     boolean hasNext = false;
     Long nextCursor = null;
 
-    // 요청한 크기보다 많은 결과가 있으면 다음 페이지가 있다는 의미
-    if (backups.size() > size) {
+    if (backups.size() > pageSize) {
       hasNext = true;
-      backups = backups.subList(0, size); // 마지막 항목은 제외
-    }
-    // 다음 커서 값 설정 (마지막 메시지의 id)
-    if (!backups.isEmpty() && hasNext) {
+      backups = backups.subList(0, pageSize);
       nextCursor = backups.get(backups.size() - 1).getId();
     }
 
@@ -132,8 +189,16 @@ public class BackupServiceImpl implements BackupService {
         .map(backupMapper::toDto)
         .toList();
 
-    return backupMapper.toPageDto(backupDtos, nextCursor, nextIdAfter , size,
-        backupRepository.count(), hasNext);
+    //조회 결과 총 개수
+    long totalElements = backupRepository.countByConditions(
+        BackupStatus.valueOf(requestBackupDto.getStatus()),
+        requestBackupDto.getWorker(),
+        startedAtFrom,
+        startedAtTo
+    );
+
+    return backupMapper.toPageDto(backupDtos, nextCursor, nextIdAfter, size, totalElements,
+        hasNext);
   }
 
   @Override
@@ -249,7 +314,8 @@ public class BackupServiceImpl implements BackupService {
       backupRepository.save(backup);
     } catch (Exception ex) {
       System.out.println(
-          "[Backup Error] 백업 파일 생성 실패: " + ex.getMessage() + "\n" + ex.getStackTrace());
+          "[Backup Error] 백업 파일 생성 실패: " + ex.getMessage() + "\n" + Arrays.toString(
+              ex.getStackTrace()));
     }
   }
 }
