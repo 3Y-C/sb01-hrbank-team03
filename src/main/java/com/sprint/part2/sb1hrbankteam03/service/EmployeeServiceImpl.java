@@ -2,6 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.service;
 
 import static com.sprint.part2.sb1hrbankteam03.entity.Status.ACTIVE;
 
+import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
@@ -41,7 +42,7 @@ public class EmployeeServiceImpl implements EmployeeService {
   //private final FileStorageService fileStorageService;
 
   @Override
-  public List<EmployeeDto> getEmployees(String keyword, String department, String position,
+  public CursorPageResponseEmployeeDto getEmployees(String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
       String status,String sortField, String sortDirection,String cursor,int size) {
     Status employeeStatus = (status != null) ? Status.from(status) : null;
@@ -60,11 +61,18 @@ public class EmployeeServiceImpl implements EmployeeService {
       throw new IllegalArgumentException("입사일 형식이 올바르지 않습니다. (예: yyyy-MM-dd)");
     }
 
-
     List<Employee> employees = employeeRepository.findEmployeesWithCursor(keyword, department, position,
         employeeNumber, start, end, employeeStatus,idAfter,pageable);
 
-    return employees.stream().map(employeeMapper::todto).collect(Collectors.toList());
+    List<EmployeeDto> employeeDtos = employees.stream()
+        .map(employeeMapper::todto)
+        .toList();
+
+    String nextCursor = employees.isEmpty() ? null : String.valueOf(employees.get(employees.size() - 1).getId());
+    int totalElements = (int) employeeRepository.countByStatus(employeeStatus);
+    boolean hasNext = employees.size() == size;
+
+    return employeeMapper.toPageDto(employeeDtos, nextCursor, idAfter, size, totalElements, hasNext);
   }
 
   @Override
