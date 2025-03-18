@@ -8,18 +8,26 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
+import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
+import com.sprint.part2.sb1hrbankteam03.entity.EmployeeChangeDetail;
+import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
+import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.entity.Status;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
+import com.sprint.part2.sb1hrbankteam03.stroage.LocalFileStorage;
 import java.awt.print.Pageable;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +47,9 @@ public class EmployeeServiceImpl implements EmployeeService {
   private final EmployeeRepository employeeRepository;
   private final DepartmentRepository departmentRepository;
   private final EmployeeMapper employeeMapper;
-  //private final FileStorageService fileStorageService;
+  private final FileMetaDataService fileMetaDataService;
+  private final EmployeeHistoryService employeeHistoryService;
+  private final LocalFileStorage localFileStorage;
 
   @Override
   public CursorPageResponseEmployeeDto getEmployees(String keyword, String department, String position,
@@ -87,7 +97,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     LocalDate parsedHireDate=validateAndParseDate(request.getHireDate());
     String employeeNumber=generateEmployeeNumber(String.valueOf(request.getHireDate()));
 
-    FileMetaData profileImage=null;
+    FileMetaData fileMetaData = fileMetaDataService.create(profile, FileCategory.IMAGE);
 
     Employee employee=new Employee(
         request.getName(),
@@ -97,9 +107,24 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.getPosition(),
         parsedHireDate,
         ACTIVE,
-        profileImage
+        fileMetaData
     );
     Employee savedEmployee = employeeRepository.save(employee);
+
+    // 이력 생성 및 상세 저장
+    EmployeeHistory history = employeeHistoryService.createHistory(savedEmployee.getEmployeeNumber(), ChangeType.CREATED, request.getMemo());
+
+    List<EmployeeChangeDetail> details = new ArrayList<>();
+    Instant now = Instant.now();
+    details.add(new EmployeeChangeDetail(history, "name", null, savedEmployee.getName(), now));
+    details.add(new EmployeeChangeDetail(history, "email", null, savedEmployee.getEmail(), now));
+    details.add(new EmployeeChangeDetail(history, "department", null, department.getName(), now));
+    details.add(new EmployeeChangeDetail(history, "position", null, savedEmployee.getPosition(), now));
+    details.add(new EmployeeChangeDetail(history, "hireDate", null, savedEmployee.getHireDate().toString(), now));
+    details.add(new EmployeeChangeDetail(history, "status", null, savedEmployee.getStatus().name(), now));
+
+    employeeHistoryService.saveChangeDetails(history, details);
+
     return employeeMapper.todto(savedEmployee);
   }
 
@@ -119,8 +144,22 @@ public class EmployeeServiceImpl implements EmployeeService {
     if(employee.getStatus().equals(Status.RESIGNED)){
       throw new IllegalArgumentException("이미 퇴사한 직원");
     }
-    //프로필 이미지 삭제 구현
-    employee.setStatus("RESIGNED");
+
+    EmployeeHistory history = employeeHistoryService.createHistory(employee.getEmployeeNumber(), ChangeType.DELETED, null);
+
+    Instant now = Instant.now();
+    List<EmployeeChangeDetail> details = new ArrayList<>();
+    details.add(new EmployeeChangeDetail(history, "name", employee.getName(), null, now));
+    details.add(new EmployeeChangeDetail(history, "email", employee.getEmail(), null, now));
+    details.add(new EmployeeChangeDetail(history, "department", employee.getDepartment().getName(), null, now));
+    details.add(new EmployeeChangeDetail(history, "position", employee.getPosition(), null, now));
+    details.add(new EmployeeChangeDetail(history, "hireDate", employee.getHireDate().toString(), null, now));
+    details.add(new EmployeeChangeDetail(history, "status", employee.getStatus().name(), null, now));
+
+
+    localFileStorage.delete(employee.getProfileImage().getId());
+    employeeRepository.delete(employee);
+    employeeHistoryService.saveChangeDetails(history, details);
   }
 
 
@@ -138,14 +177,56 @@ public class EmployeeServiceImpl implements EmployeeService {
     Department department=departmentRepository.findById(request.getDepartmentId())
         .orElseThrow(()->new IllegalArgumentException("부서를 찾을 수 없습니다."));
 
-    /*if (profile!=null) {
-      if (employee.getProfileImage()!=null) {
-      }
-    }*/
+    List<EmployeeChangeDetail> changeDetails = new ArrayList<>();
+    Instant now = Instant.now();
 
-    LocalDate parsedHireDate = validateAndParseDate(request.getHireDate());
+    if (!Objects.equals(employee.getName(), request.getName())) {
+      changeDetails.add(new EmployeeChangeDetail(null, "name", employee.getName(), request.getName(), now));
+      employee.setName(request.getName());
+    }
 
-    employee.update(request,department,parsedHireDate);
+    if (!Objects.equals(employee.getEmail(), request.getEmail())) {
+      validateEmailUnique(request.getEmail());
+      changeDetails.add(new EmployeeChangeDetail(null, "email", employee.getEmail(), request.getEmail(), now));
+      employee.setEmail(request.getEmail());
+    }
+
+    if (!Objects.equals(employee.getDepartment().getId(), department.getId())) {
+      changeDetails.add(new EmployeeChangeDetail(null, "department", employee.getDepartment().getName(), department.getName(), now));
+      employee.setDepartment(department);
+    }
+
+    if (!Objects.equals(employee.getPosition(), request.getPosition())) {
+      changeDetails.add(new EmployeeChangeDetail(null, "position", employee.getPosition(), request.getPosition(), now));
+      employee.setPosition(request.getPosition());
+    }
+
+
+    LocalDate newHireDate = validateAndParseDate(request.getHireDate());
+
+    if (!Objects.equals(employee.getHireDate(), newHireDate)) {
+      changeDetails.add(new EmployeeChangeDetail(null, "hireDate", employee.getHireDate().toString(), newHireDate.toString(), now));
+      employee.setHireDate(newHireDate);
+    }
+
+    Status newStatus = Status.valueOf(request.getStatus());
+    if (!Objects.equals(employee.getStatus(), newStatus)) {
+      changeDetails.add(new EmployeeChangeDetail(null, "status", employee.getStatus().name(), newStatus.name(), now));
+      employee.setStatus(newStatus);
+    }
+
+    if(profile != null){
+      FileMetaData deleteFileMetaData = employee.getProfileImage();
+      if(deleteFileMetaData != null) fileMetaDataService.delete(deleteFileMetaData.getId());
+      FileMetaData fileMetaData = fileMetaDataService.create(profile, FileCategory.IMAGE);
+      employee.setProfileImage(fileMetaData);
+    }
+
+    EmployeeHistory history = employeeHistoryService.createHistory(employee.getEmployeeNumber(), ChangeType.UPDATED, request.getMemo());
+
+    if (!changeDetails.isEmpty()) {
+      employeeHistoryService.saveChangeDetails(history, changeDetails);
+    }
 
     return employeeMapper.todto(employee);
   }

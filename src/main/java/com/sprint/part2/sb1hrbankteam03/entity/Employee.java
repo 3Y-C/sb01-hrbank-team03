@@ -14,10 +14,12 @@ import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "employees")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Employee extends BaseUpdatableEntity {
@@ -46,17 +48,4 @@ public class Employee extends BaseUpdatableEntity {
   @JoinColumn(name = "profile_id")
   private FileMetaData profileImage;
 
-  public void update(EmployeeUpdateRequest request,Department department,LocalDate hireDate) {
-    this.name = request.getName();
-    this.email = request.getEmail();
-    this.department = department;
-    this.position = request.getPosition();
-    this.hireDate = hireDate;
-    this.status=Status.valueOf(request.getStatus());
-  }
-
-  public void setProfileImage(FileMetaData profileImage) {
-    this.profileImage = profileImage;
-  }
-  public void setStatus(String status) {this.status = Status.valueOf(status);}
 }
