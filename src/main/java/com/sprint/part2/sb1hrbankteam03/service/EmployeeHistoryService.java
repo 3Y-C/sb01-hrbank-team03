@@ -23,5 +23,5 @@ public interface EmployeeHistoryService {
 
   List<DiffDto> getChangeDetails(Long historyId);
 
-  long getChangeLogCount(LocalDateTime fromDate, LocalDateTime toDate);
+  long getChangeLogCount(Instant fromDate, Instant toDate);
 }

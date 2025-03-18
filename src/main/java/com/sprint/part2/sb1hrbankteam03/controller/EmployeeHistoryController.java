@@ -7,6 +7,7 @@ import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -78,12 +79,12 @@ public class EmployeeHistoryController {
   // 최근 일주일 이력 건수 조회
   @GetMapping("/count")
   public ResponseEntity<Long> getRecentChangeLogCount(
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate) {
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant toDate) {
 
     // 기본값 설정: fromDate는 7일 전, toDate는 현재 시간
-    LocalDateTime start = (fromDate != null) ? fromDate : LocalDateTime.now().minusDays(7);
-    LocalDateTime end = (toDate != null) ? toDate : LocalDateTime.now();
+    Instant start = (fromDate != null) ? fromDate : Instant.now().minus(7, ChronoUnit.DAYS);
+    Instant end = (toDate != null) ? toDate : Instant.now();
 
     long count = employeeHistoryService.getChangeLogCount(start, end);
     return ResponseEntity.ok(count);
