@@ -20,7 +20,7 @@ import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
 import com.sprint.part2.sb1hrbankteam03.stroage.LocalFileStorage;
-import java.awt.print.Pageable;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -36,12 +36,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
