@@ -45,7 +45,7 @@ public class DepartmentController {
   public ResponseEntity<CursorPageResponseDepartmentDto> findDepartments(
       @RequestParam(required = false, defaultValue = "") String nameOrDescription,
       @RequestParam(required = false, defaultValue = "0") Long idAfter,
-      @RequestParam(required = true, defaultValue = "") String cursor,
+      @RequestParam(required = false, defaultValue = "") String cursor,
       @RequestParam(required = false, defaultValue = "20") int size,
       @RequestParam(required = false, defaultValue = "name") String sortField,
       @RequestParam(required = false, defaultValue = "asc") String sortDirection) {
