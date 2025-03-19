@@ -35,6 +35,13 @@ public class DepartmentServiceImpl implements DepartmentService{
     if (!StringUtils.hasText(departmentCreateRequest.name())) {
       throw new IllegalArgumentException("Department name cannot be null or empty");
     }
+
+    // 같은 이름의 부서가 이미 존재하는지 확인
+    boolean departmentExists = departmentRepository.existsByName(departmentCreateRequest.name());
+    if (departmentExists) {
+      throw new IllegalArgumentException("Department with this name already exists");
+    }
+
     LocalDate establishDate = LocalDate.parse(departmentCreateRequest.establishedDate());
     Department department =
         new Department(departmentCreateRequest.name(), departmentCreateRequest.description(),
@@ -92,8 +99,9 @@ public class DepartmentServiceImpl implements DepartmentService{
     // 정렬 필드
     String validSortField = sortField.equals("name") ? "name" : "establishDate";
 
+    // null 이거나 빈 문자열인지 검사
     Long startId = null;
-    if (cursor != null) {
+    if (cursor != null && !cursor.isEmpty()) {
       String decodedCursor = new String(Base64.getDecoder().decode(cursor));
       startId = Long.valueOf(decodedCursor); // 커서에서 ID를 추출
     }
