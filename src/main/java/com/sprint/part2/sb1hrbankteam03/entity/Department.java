@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table
+@Table(name = "departments")
 @NoArgsConstructor
 public class Department extends BaseUpdatableEntity {
 
