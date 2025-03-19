@@ -2,6 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.service;
 
 import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
+import com.sprint.part2.sb1hrbankteam03.dto.backup.ParsedBackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
 import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
@@ -23,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -91,71 +93,14 @@ public class BackupServiceImpl implements BackupService {
       throw new IllegalArgumentException("requestBackupDto cannot be null");
     }
 
-    String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
-
-    BackupStatus backupStatus = requestBackupDto.getStatus() == null ? null
-        : BackupStatus.valueOf(requestBackupDto.getStatus());
-
-    //startedAtFrom 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최소값으로 설정
-    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
-    if (requestBackupDto.getStartedAtFrom() != null) {
-      try {
-        startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
-      } catch (Exception e) {
-        startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
-      }
-    }
-    //startedAtTo 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최대값으로 설정
-    LocalDateTime startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-    if (requestBackupDto.getStartedAtTo() != null) {
-      try {
-        startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
-      } catch (Exception e) {
-        startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-      }
-    }
-
-    int size = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
-    PageRequest pageRequest = PageRequest.of(0, size + 1);
-
-    // 커서 값 설정
-    Long cursorId = null;
-    LocalDateTime cursorStartAt = null;
-
-    if (requestBackupDto.getCursor() != null) {
-      try {
-        cursorId = Long.parseLong(requestBackupDto.getCursor());
-
-        // 커서 ID로 엔티티 조회하여 startAt 가져오기
-        Optional<Backup> cursorBackup = backupRepository.findById(cursorId);
-        if (cursorBackup.isPresent()) {
-          cursorStartAt = cursorBackup.get().getStartAt();
-        } else {
-          // 해당 ID가 없을 경우 기본값 설정 (내림차순이므로 최대값으로 설정해야한다.)
-          cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-        }
-      } catch (NumberFormatException e) {
-        cursorId = null;
-        cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-      }
-    } else {
-      // 첫 페이지 요청 시 최대값으로 설정 (내림차순이므로!)
-      cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-    }
+    ParsedBackupDto parsedBackupDto = getParsedRequestBackupDto(requestBackupDto);
 
     List<Backup> backups; //결과를 담을 리스트
-    backups = backupRepository.findByConditionsOrderByStartAtDesc(
-        backupStatus,
-        workerIp,
-        startedAtFrom,
-        startedAtTo,
-        cursorStartAt,
-        cursorId,
-        pageRequest
-    );
+    backups = sortBackups(parsedBackupDto, requestBackupDto.getSortField(), requestBackupDto.getSortDirection());
 
+    int size = parsedBackupDto.getPageSize();
     //다음 페이지 존재하는지 확인하기
-    boolean hasNext = backups.size() > size;
+    boolean hasNext = backups.size() > size ;
 
     // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
     if (hasNext) {
@@ -173,20 +118,13 @@ public class BackupServiceImpl implements BackupService {
         .map(backupMapper::toDto)
         .toList();
 
-    //조회 결과 총 개수
-    long totalElements = backupRepository.countByConditions(
-        backupStatus,
-        workerIp,
-        startedAtFrom,
-        startedAtTo
-    );
 
     return backupMapper.toPageDto(
         backupDtos,
         nextCursor == null ? null : nextCursor.toString(),
-        cursorId,
+        parsedBackupDto.getCursorId(),
         size,
-        totalElements,
+        parsedBackupDto.getTotalElements(),
         hasNext);
   }
 
@@ -324,5 +262,135 @@ public class BackupServiceImpl implements BackupService {
           "[Backup Error] 백업 파일 생성 실패: " + ex.getMessage() + "\n" + Arrays.toString(
               ex.getStackTrace()));
     }
+  }
+
+  private ParsedBackupDto getParsedRequestBackupDto(RequestBackupDto requestBackupDto) {
+
+    String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
+
+    BackupStatus backupStatus = requestBackupDto.getStatus() == null ? null
+        : BackupStatus.valueOf(requestBackupDto.getStatus());
+
+    //startedAtFrom 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최소값으로 설정
+    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+    if (requestBackupDto.getStartedAtFrom() != null) {
+      try {
+        startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
+      } catch (Exception e) {
+        startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+      }
+    }
+    //startedAtTo 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최대값으로 설정
+    LocalDateTime startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+    if (requestBackupDto.getStartedAtTo() != null) {
+      try {
+        startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
+      } catch (Exception e) {
+        startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+      }
+    }
+
+    int size = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
+    PageRequest pageRequest = PageRequest.of(0, size + 1);
+
+    // 커서 값 설정
+    Long cursorId = null;
+    LocalDateTime cursorStartAt = null;
+
+    if (requestBackupDto.getCursor() != null) {
+      try {
+        cursorId = Long.parseLong(requestBackupDto.getCursor());
+
+        // 커서 ID로 엔티티 조회하여 startAt 가져오기
+        Optional<Backup> cursorBackup = backupRepository.findById(cursorId);
+        if (cursorBackup.isPresent()) {
+          cursorStartAt = cursorBackup.get().getStartAt();
+        } else {
+          // 해당 ID가 없을 경우 기본값 설정 (내림차순이므로 최대값으로 설정해야한다.)
+          cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        }
+      } catch (NumberFormatException e) {
+        cursorId = null;
+        cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+      }
+    } else {
+      // 첫 페이지 요청 시 최대값으로 설정 (내림차순이므로!)
+      cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+    }
+
+    //조회 결과 총 개수
+    long totalElements = backupRepository.countByConditions(
+        backupStatus,
+        workerIp,
+        startedAtFrom,
+        startedAtTo
+    );
+
+    return new ParsedBackupDto(
+        workerIp,
+        backupStatus,
+        startedAtFrom,
+        startedAtTo,
+        size,
+        cursorId,
+        cursorStartAt,
+        pageRequest,
+        totalElements
+    );
+  }
+
+  // 정렬 기준(필드), 방향(오름차순/내림차순)에 따라 결과를 반환하는 함수
+  private List<Backup> sortBackups(ParsedBackupDto parsedBackupDto, String sortField,
+      String sortDirection) {
+
+    List<Backup> backups = new ArrayList<>();
+
+    if (sortDirection.equalsIgnoreCase("asc")) {
+      if (sortField.equalsIgnoreCase("endedAt")) {
+        backups = backupRepository.findByConditionsOrderByEndAtAsc(
+            parsedBackupDto.getBackupStatus(),
+            parsedBackupDto.getWorkerIp(),
+            parsedBackupDto.getStartedAtFrom(),
+            parsedBackupDto.getStartedAtTo(),
+            parsedBackupDto.getCursorStartAt(),
+            parsedBackupDto.getCursorId(),
+            parsedBackupDto.getPageRequest()
+        );
+      } else {
+        backups = backupRepository.findByConditionsOrderByStartAtAsc(
+            parsedBackupDto.getBackupStatus(),
+            parsedBackupDto.getWorkerIp(),
+            parsedBackupDto.getStartedAtFrom(),
+            parsedBackupDto.getStartedAtTo(),
+            parsedBackupDto.getCursorStartAt(),
+            parsedBackupDto.getCursorId(),
+            parsedBackupDto.getPageRequest()
+        );
+      }
+
+    } else {
+      if (sortField.equalsIgnoreCase("endedAt")) {
+        backups = backupRepository.findByConditionsOrderByEndAtDesc(
+            parsedBackupDto.getBackupStatus(),
+            parsedBackupDto.getWorkerIp(),
+            parsedBackupDto.getStartedAtFrom(),
+            parsedBackupDto.getStartedAtTo(),
+            parsedBackupDto.getCursorStartAt(),
+            parsedBackupDto.getCursorId(),
+            parsedBackupDto.getPageRequest()
+        );
+      } else {
+        backups = backupRepository.findByConditionsOrderByStartAtDesc(
+            parsedBackupDto.getBackupStatus(),
+            parsedBackupDto.getWorkerIp(),
+            parsedBackupDto.getStartedAtFrom(),
+            parsedBackupDto.getStartedAtTo(),
+            parsedBackupDto.getCursorStartAt(),
+            parsedBackupDto.getCursorId(),
+            parsedBackupDto.getPageRequest()
+        );
+      }
+    }
+    return backups;
   }
 }
