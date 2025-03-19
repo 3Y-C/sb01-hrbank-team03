@@ -268,6 +268,7 @@ public class BackupServiceImpl implements BackupService {
 
         byte[] fileContent = inputStream.readAllBytes();
 
+        backupFile.setFileSize((long) fileContent.length);
         //파일 메타데이터 저장
         FileMetaData savedFile = fileMetaDataRepository.save(backupFile);
 
