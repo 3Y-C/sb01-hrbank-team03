@@ -13,5 +13,5 @@ public class CursorPageResponseBackupDto {
   private Long nextIdAfter;
   private int size;
   private Long totalElements;
-  private boolean hasNest;
+  private boolean hasNext;
 }
