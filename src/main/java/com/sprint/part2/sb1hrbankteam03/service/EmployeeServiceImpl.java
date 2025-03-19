@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
@@ -112,8 +113,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         ACTIVE,
         fileMetaData
     );
-    Employee savedEmployee = employeeRepository.save(employee);
 
+    Employee savedEmployee = employeeRepository.save(employee);
     // 이력 생성 및 상세 저장
     EmployeeHistory history = employeeHistoryService.createHistory(savedEmployee.getEmployeeNumber(), ChangeType.CREATED, request.getMemo());
 

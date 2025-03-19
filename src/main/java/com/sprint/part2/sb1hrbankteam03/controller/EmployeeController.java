@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
@@ -15,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/employees")
@@ -56,7 +59,8 @@ public class EmployeeController {
   }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<EmployeeDto> createEmployee(@RequestPart(value = "employeeCreateRequest",required = false) EmployeeCreateRequest employeeCreateRequest,
+  public ResponseEntity<EmployeeDto> createEmployee(
+      @RequestPart("employee") EmployeeCreateRequest  employeeCreateRequest,
       @RequestPart(value = "profile",required = false) MultipartFile profile) {
     EmployeeDto createEmployee=employeeService.createEmployee(employeeCreateRequest,profile);
     return ResponseEntity.status(HttpStatus.CREATED).body(createEmployee);
@@ -77,7 +81,7 @@ public class EmployeeController {
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<EmployeeDto> updateEmployee(
       @PathVariable("employeeId") Long employeeId,
-      @RequestPart(value = "employeeUpdateRequest") EmployeeUpdateRequest employeeUpdateRequest,
+      @RequestPart(value = "employee") EmployeeUpdateRequest employeeUpdateRequest,
       @RequestPart(value = "profile",required = false) MultipartFile profile) {
     EmployeeDto updateEmployee=employeeService.updateEmployee(employeeId,employeeUpdateRequest,profile);
     return ResponseEntity.ok(updateEmployee);

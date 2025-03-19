@@ -19,5 +19,5 @@ public class EmployeeDto {
   private String position;
   private String hireDate;
   private String status;
-  private Long profileId;
+  private Long profileImageId;
 }
