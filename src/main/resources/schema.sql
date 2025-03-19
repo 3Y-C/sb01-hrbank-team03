@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS "Departments" (
     "updated_at" TIMESTAMP NULL
 );
 
-CREATE TYPE "employee_status_enum" AS ENUM ('재직중', '휴직중', '퇴사');
+CREATE TYPE "employee_status_enum" AS ENUM ('ACTIVE', 'ON_LEAVE', 'RESIGNED');
 
 CREATE TABLE IF NOT EXISTS "Employees" (
     "id" BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -29,13 +29,13 @@ CREATE TABLE IF NOT EXISTS "Employees" (
     "employee_number" VARCHAR(255) NOT NULL UNIQUE,
     "position" VARCHAR(100) NOT NULL,
     "hire_date" DATE NOT NULL,
-    "status" "employee_status_enum" DEFAULT '재직중',
+    "status" "employee_status_enum" DEFAULT 'ACTIVE',
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "update_at" TIMESTAMP NULL,
     FOREIGN KEY ("department_id") REFERENCES "Departments"("id") ON DELETE SET NULL
 );
 
-CREATE TYPE "history_type_enum" AS ENUM ('생성', '수정', '삭제');
+CREATE TYPE "history_type_enum" AS ENUM ('CREATED', 'UPDATED', 'DELETED');
 
 CREATE TABLE IF NOT EXISTS "employee_historys" (
     "id" BIGINT NOT NULL PRIMARY KEY,
