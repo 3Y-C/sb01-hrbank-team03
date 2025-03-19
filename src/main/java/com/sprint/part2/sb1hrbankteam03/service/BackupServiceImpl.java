@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -79,7 +78,8 @@ public class BackupServiceImpl implements BackupService {
       return backupMapper.toDto(backup);
     } else {
       //있다면 새로 생성
-      Backup newBackup = backupRepository.save(createBackupFile(workerIp));
+      Backup newBackup = createBackupFile(workerIp);
+      backupRepository.save(newBackup);
       return backupMapper.toDto(newBackup);
     }
   }
@@ -91,97 +91,81 @@ public class BackupServiceImpl implements BackupService {
       throw new IllegalArgumentException("requestBackupDto cannot be null");
     }
 
-    LocalDateTime startedAtFrom = null;
-    if (requestBackupDto.getStartedAtFrom() != null) {
-      startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
-    }
-
-    LocalDateTime startedAtTo = null;
-    if (requestBackupDto.getStartedAtTo() != null) {
-      startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
-    }
-
-    int size = (int) requestBackupDto.getSize();
-    Long cursor =
-        requestBackupDto.getCursor() != null ? Long.parseLong(requestBackupDto.getCursor()) : null;
-
-    // 커서가 있는 경우 해당 Backup 엔티티 조회
-    LocalDateTime cursorDateAfter = null;
-    if (cursor != null) {
-      Optional<Backup> cursorBackup = backupRepository.findById(cursor);
-      if (cursorBackup.isPresent()) {
-        cursorDateAfter = cursorBackup.get().getStartAt();
-      }
-    }
-
-    int pageSize = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
-
-    PageRequest pageRequest = PageRequest.of(0, pageSize);
+    String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
 
     BackupStatus backupStatus = requestBackupDto.getStatus() == null ? null
         : BackupStatus.valueOf(requestBackupDto.getStatus());
 
-    List<Backup> backups; //결과를 담을 리스트
-
-    //시작시간 기준
-    if (requestBackupDto.getSortField().equals("startedAt")) {
-      //오름차순
-      if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
-        backups = backupRepository.findByConditionsOrderByStartAtAsc(
-            backupStatus,
-            requestBackupDto.getWorker(),
-            startedAtFrom,
-            startedAtTo,
-            cursorDateAfter,
-            cursor,
-            pageRequest
-        );
-      } else {
-        //내림차순
-        backups = backupRepository.findByConditionsOrderByStartAtDesc(
-            backupStatus,
-            requestBackupDto.getWorker(),
-            startedAtFrom,
-            startedAtTo,
-            cursorDateAfter,
-            cursor,
-            pageRequest
-        );
+    //startedAtFrom 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최소값으로 설정
+    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+    if (requestBackupDto.getStartedAtFrom() != null) {
+      try {
+        startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
+      } catch (Exception e) {
+        startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
       }
-    } else {
-      //종료 시간 기준
-      //오름차순
-      if (requestBackupDto.getSortDirection().equalsIgnoreCase("asc")) {
-        backups = backupRepository.findByConditionsOrderByEndAtAsc(
-            backupStatus,
-            requestBackupDto.getWorker(),
-            startedAtFrom,
-            startedAtTo,
-            cursorDateAfter,
-            cursor,
-            pageRequest
-        );
-      } else {
-        //내림차순
-        backups = backupRepository.findByConditionsOrderByEndAtDesc(
-            backupStatus,
-            requestBackupDto.getWorker(),
-            startedAtFrom,
-            startedAtTo,
-            cursorDateAfter,
-            cursor,
-            pageRequest
-        );
+    }
+    //startedAtTo 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최대값으로 설정
+    LocalDateTime startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+    if (requestBackupDto.getStartedAtTo() != null) {
+      try {
+        startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
+      } catch (Exception e) {
+        startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
       }
     }
 
-    //다음 페이지 존재하는지 확인하기
-    boolean hasNext = false;
-    Long nextCursor = null;
+    int size = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
+    PageRequest pageRequest = PageRequest.of(0, size + 1);
 
-    if (backups.size() > pageSize) {
-      hasNext = true;
-      backups = backups.subList(0, pageSize);
+    // 커서 값 설정
+    Long cursorId = null;
+    LocalDateTime cursorStartAt = null;
+
+    if (requestBackupDto.getCursor() != null) {
+      try {
+        cursorId = Long.parseLong(requestBackupDto.getCursor());
+
+        // 커서 ID로 엔티티 조회하여 startAt 가져오기
+        Optional<Backup> cursorBackup = backupRepository.findById(cursorId);
+        if (cursorBackup.isPresent()) {
+          cursorStartAt = cursorBackup.get().getStartAt();
+        } else {
+          // 해당 ID가 없을 경우 기본값 설정 (내림차순이므로 최대값으로 설정해야한다.)
+          cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        }
+      } catch (NumberFormatException e) {
+        cursorId = null;
+        cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+      }
+    } else {
+      // 첫 페이지 요청 시 최대값으로 설정 (내림차순이므로!)
+      cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+    }
+
+    List<Backup> backups; //결과를 담을 리스트
+    backups = backupRepository.findByConditionsOrderByStartAtDesc(
+        backupStatus,
+        workerIp,
+        startedAtFrom,
+        startedAtTo,
+        cursorStartAt,
+        cursorId,
+        pageRequest
+    );
+
+    //다음 페이지 존재하는지 확인하기
+    boolean hasNext = backups.size() > size;
+
+    // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
+    if (hasNext) {
+      backups = backups.subList(0, size);
+    }
+
+    // 결과가 없거나 다음 페이지가 없는 경우,
+    Long nextCursor = null;
+    if (!backups.isEmpty()) {
+      // 마지막 항목의 ID를 다음 커서로 설정하기
       nextCursor = backups.get(backups.size() - 1).getId();
     }
 
@@ -191,14 +175,18 @@ public class BackupServiceImpl implements BackupService {
 
     //조회 결과 총 개수
     long totalElements = backupRepository.countByConditions(
-        BackupStatus.valueOf(requestBackupDto.getStatus()),
-        requestBackupDto.getWorker(),
+        backupStatus,
+        workerIp,
         startedAtFrom,
         startedAtTo
     );
 
-    return backupMapper.toPageDto(backupDtos, nextCursor == null ? null : nextCursor.toString(),
-        cursor, size, totalElements,
+    return backupMapper.toPageDto(
+        backupDtos,
+        nextCursor == null ? null : nextCursor.toString(),
+        cursorId,
+        size,
+        totalElements,
         hasNext);
   }
 
@@ -243,13 +231,24 @@ public class BackupServiceImpl implements BackupService {
 
         int pageSize = 100;
         int pageNumber = 0;
-        Page<Employee> employeePage;
+        boolean hasNext = false;
+
+        List<Employee> employees;
 
         do {
           //모든 직원 페이지네이션으로 가져와서 작성
-          Pageable pageable = PageRequest.of(pageNumber, pageSize);
-          employeePage = employeeRepository.findAll(pageable);
-          for (Employee employee : employeePage.getContent()) {
+          Pageable pageable = PageRequest.of(pageNumber, pageSize + 1);
+          employees = employeeRepository.findAll(pageable).getContent();
+
+          //다음 페이지 존재하는지 확인하기
+          hasNext = employees.size() > pageSize;
+
+          // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
+          if (hasNext) {
+            employees = employees.subList(0, pageSize);
+          }
+
+          for (Employee employee : employees) {
             writer.write(String.format("%d,%s,%s,%s,%s,%s,%s\n",
                 employee.getId(),
                 employee.getName(),
@@ -262,20 +261,28 @@ public class BackupServiceImpl implements BackupService {
           }
 
           pageNumber++;
-        } while (employeePage.hasNext());
+
+        } while (hasNext);
       }
       try (InputStream inputStream = Files.newInputStream(tempFile)) {
+
+        byte[] fileContent = inputStream.readAllBytes();
+
         //파일 메타데이터 저장
         FileMetaData savedFile = fileMetaDataRepository.save(backupFile);
+
+        //실제 파일 저장
+        fileStorage.put(savedFile.getId(), fileContent);
+
         //실제 파일 넣은 후 삭제
         Files.delete(tempFile);
 
-        fileStorage.put(savedFile.getId(), inputStream.readAllBytes());
         //완료된 경우 backup 상태 바꾸고 파일 메타 저장
         backup.setStatus(BackupStatus.COMPLETED);
         backup.setEndAt(LocalDateTime.now());
         backup.setBackupFile(savedFile);
-        return backupRepository.save(backup);
+        Backup save = backupRepository.save(backup);
+        return save;
       }
     } catch (Exception e) {
       handleBackupFailure(e, backup);

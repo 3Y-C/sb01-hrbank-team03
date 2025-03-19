@@ -5,6 +5,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.service.BackupService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +21,7 @@ public class BackupController {
 
   //데이터 백업 목록 전체 조회
   @GetMapping
-  public CursorPageResponseBackupDto getBackups(@RequestParam(required = false) String worker,
+  public ResponseEntity<CursorPageResponseBackupDto> getBackups(@RequestParam(required = false) String worker,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String startedAtFrom, // date-time
       @RequestParam(required = false) String startedAtTo, // date-time
@@ -32,7 +33,7 @@ public class BackupController {
 
     RequestBackupDto requestBackupDto = new RequestBackupDto(worker,status, startedAtFrom, startedAtTo, idAfter, cursor, size, sortField, sortDirection);
 
-    return backupService.getBackups(requestBackupDto);
+    return ResponseEntity.ok(backupService.getBackups(requestBackupDto));
   }
 
   //데이터 백업 생성
