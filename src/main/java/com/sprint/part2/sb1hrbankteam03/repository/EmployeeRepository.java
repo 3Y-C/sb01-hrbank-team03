@@ -11,7 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+public interface EmployeeRepository extends JpaRepository<Employee, Long>,
+    EmployeeRepositoryCustom {
 
   boolean existsByEmail(String email);
 
@@ -55,7 +56,11 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
   //특정 기간내 입사(상태x)
   long countByStatusAndHireDateAfter(Status status, LocalDate hireDateAfter);
 
-  @Query("SELECT e FROM Employee e " +
+  long countByHireDateBetween(LocalDate start, LocalDate end);
+
+  long countByHireDateAfter(LocalDate start);
+
+  /*@Query("SELECT e FROM Employee e " +
       "LEFT JOIN e.department d " +
       "WHERE (:keyword IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
       "                      OR LOWER(e.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +

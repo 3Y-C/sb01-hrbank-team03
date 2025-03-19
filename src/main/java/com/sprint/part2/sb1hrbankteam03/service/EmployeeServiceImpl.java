@@ -27,12 +27,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -54,12 +56,15 @@ public class EmployeeServiceImpl implements EmployeeService {
   @Override
   public CursorPageResponseEmployeeDto getEmployees(String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
-      String status,String sortField, String sortDirection,String cursor,int size) {
+      String status, String sortField, String sortDirection,
+      String cursor, int size) {
+
+    if (sortDirection == null || sortDirection.isEmpty()) {
+      sortDirection = "asc"; // 기본값 설정
+    }
     Status employeeStatus = (status != null) ? Status.from(status) : null;
-
-    Pageable pageable = (Pageable) PageRequest.of(0, size,getSort(sortField,sortDirection));
-    Long idAfter=(cursor!=null)?Long.parseLong(cursor):null;
-
+    Pageable pageable = PageRequest.of(0, size, getSort(sortField, sortDirection));
+    Long idAfter = (cursor != null) ? Long.parseLong(cursor) : null;
 
     // 날짜 변환 시 예외 처리 추가
     LocalDate start = null;
@@ -71,8 +76,8 @@ public class EmployeeServiceImpl implements EmployeeService {
       throw new IllegalArgumentException("입사일 형식이 올바르지 않습니다. (예: yyyy-MM-dd)");
     }
 
-    List<Employee> employees = employeeRepository.findEmployeesWithCursor(keyword, department, position,
-        employeeNumber, start, end, employeeStatus,idAfter,pageable);
+    List<Employee> employees = employeeRepository.findEmployeesWithFilters(keyword, department, position,
+        employeeNumber, start, end, idAfter, employeeStatus, pageable);
 
     List<EmployeeDto> employeeDtos = employees.stream()
         .map(employeeMapper::todto)
@@ -271,21 +276,26 @@ public class EmployeeServiceImpl implements EmployeeService {
 
   @Override
   public long getTotalEmployeeCount(String status, String fromDate, String toDate) {
-    Status employeeStatus=(status!=null) ? Status.from(status) : null;
+    Status employeeStatus = (status != null) ? Status.from(status) : null;
 
-    LocalDate now=LocalDate.now();
+    LocalDate now = LocalDate.now();
     LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : null;
     LocalDate end = (toDate != null) ? LocalDate.parse(toDate) : now;
 
-    if(start!=null && end!=null) {
-      return employeeRepository.countByStatusAndHireDateBetween(employeeStatus,start,end);
-    }else if (start!=null) {
-      return employeeRepository.countByStatusAndHireDateAfter(employeeStatus,start);
-    }else{
-      return employeeRepository.countByStatus(employeeStatus);
+    if (start != null && end != null) {
+      return (employeeStatus != null)
+          ? employeeRepository.countByStatusAndHireDateBetween(employeeStatus, start, end)
+          : employeeRepository.countByHireDateBetween(start, end);
+    } else if (start != null) {
+      return (employeeStatus != null)
+          ? employeeRepository.countByStatusAndHireDateAfter(employeeStatus, start)
+          : employeeRepository.countByHireDateAfter(start);
+    } else {
+      return (employeeStatus != null)
+          ? employeeRepository.countByStatus(employeeStatus)
+          : employeeRepository.count();
     }
   }
-
 
   private void validateEmailUnique(String email) {
     if (employeeRepository.existsByEmail(email)) {
@@ -338,12 +348,23 @@ public class EmployeeServiceImpl implements EmployeeService {
     }  }
 
   private Sort getSort(String sortField, String sortDirection) {
-    Sort.Direction direction =sortDirection.equalsIgnoreCase("desc")?Sort.Direction.DESC:Sort.Direction.ASC;
-    return switch (sortField.toLowerCase()){
-      case "name" -> Sort.by(direction,"name");
-      case "employeeNumber" -> Sort.by(direction,"employeeNumber");
-      case "hireDate" -> Sort.by(direction,"hireDate");
-      default -> Sort.by(Sort.Direction.ASC,"name");
-    };
+    if (sortField == null || sortField.isEmpty()) {
+      sortField = "name";
+    }
+    if (sortDirection == null || sortDirection.isEmpty()) {
+      sortDirection = "asc";
+    }
+
+    Sort.Direction direction = sortDirection.equalsIgnoreCase("desc")
+        ? Sort.Direction.DESC
+        : Sort.Direction.ASC;
+
+    Map<String,String> sortFieldMap = Map.of(
+        "name","name",
+        "employeeNumber","employeeNumber",
+        "hireDate","hire_date"
+    );
+    String dbSortField = sortFieldMap.getOrDefault(sortField.toLowerCase(), sortField);
+    return Sort.by(direction, dbSortField);
   }
 }
