@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS "file_meta_data" (
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS "Departments" (
+CREATE TABLE IF NOT EXISTS "departments" (
     "id" BIGINT NOT NULL PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL UNIQUE,
     "description" VARCHAR(255) NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS "Departments" (
 
 CREATE TYPE "employee_status_enum" AS ENUM ('ACTIVE', 'ON_LEAVE', 'RESIGNED');
 
-CREATE TABLE IF NOT EXISTS "Employees" (
+CREATE TABLE IF NOT EXISTS "employees" (
     "id" BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
      "department_id" BIGINT NULL,
     "profile_id" BIGINT NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS "Employees" (
     "status" "employee_status_enum" DEFAULT 'ACTIVE',
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "update_at" TIMESTAMP NULL,
-    FOREIGN KEY ("department_id") REFERENCES "Departments"("id") ON DELETE SET NULL
+    FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE SET NULL
 );
 
 CREATE TYPE "history_type_enum" AS ENUM ('CREATED', 'UPDATED', 'DELETED');
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS "employee_historys" (
     "ip_address" VARCHAR(15) NOT NULL,
     "edited_at" TIMESTAMP NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY ("employee_number") REFERENCES "Employees"("employee_number")
+    FOREIGN KEY ("employee_number") REFERENCES "employees"("employee_number")
 );
 
 
