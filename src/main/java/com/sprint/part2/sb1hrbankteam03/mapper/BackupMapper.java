@@ -16,7 +16,7 @@ public class BackupMapper {
         backup.getStartAt().toString(),
         backup.getEndAt() == null ? null : backup.getEndAt().toString(),
         backup.getStatus().toString(),
-        Integer.parseInt(String.valueOf(backup.getId()))
+        backup.getBackupFile() == null? null : Integer.parseInt(String.valueOf(backup.getBackupFile().getId()))
     );
   }
 

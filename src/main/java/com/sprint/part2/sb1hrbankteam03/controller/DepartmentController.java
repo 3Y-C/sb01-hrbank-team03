@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
@@ -41,14 +42,17 @@ public class DepartmentController {
   }
 
   @GetMapping
-  public ResponseEntity<CursorPageResponseDepartmentDto> findDepartments(@ModelAttribute DepartmentGetRequest departmentGetRequest) {
+  public ResponseEntity<CursorPageResponseDepartmentDto> findDepartments(
+      @RequestParam(required = false, defaultValue = "") String nameOrDescription,
+      @RequestParam(required = false, defaultValue = "0") Long idAfter,
+      @RequestParam(required = false, defaultValue = "") String cursor,
+      @RequestParam(required = false, defaultValue = "20") int size,
+      @RequestParam(required = false, defaultValue = "name") String sortField,
+      @RequestParam(required = false, defaultValue = "asc") String sortDirection) {
+
     CursorPageResponseDepartmentDto response = departmentService.findDepartments(
-        departmentGetRequest.nameOrDescription(),
-        departmentGetRequest.idAfter(),
-        departmentGetRequest.cursor(),
-        departmentGetRequest.size(),
-        departmentGetRequest.sortField(),
-        departmentGetRequest.sortDirection());
+        nameOrDescription, idAfter, cursor, size, sortField, sortDirection);
+
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 

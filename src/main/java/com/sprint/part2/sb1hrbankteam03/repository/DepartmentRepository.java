@@ -37,7 +37,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       @Param("startId") Long startId,
       Pageable pageable);
 
-
   boolean existsByName(String name);
 
   // 전체 부서 수를 Integer로 반환
