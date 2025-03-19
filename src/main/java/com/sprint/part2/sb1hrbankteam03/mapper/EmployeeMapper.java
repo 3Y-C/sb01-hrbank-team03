@@ -20,7 +20,7 @@ public class EmployeeMapper {
         savedEmployee.getPosition(),
         savedEmployee.getHireDate().toString(),
         savedEmployee.getStatus().toString(),
-        null
+        savedEmployee.getProfileImage().getId()
     );
   }
 

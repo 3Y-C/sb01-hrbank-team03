@@ -9,7 +9,9 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.service.EmployeeServiceImpl;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,21 +40,23 @@ public class EmployeeController {
       @RequestParam(required = false) String startDate,  // 입사일 범위 시작
       @RequestParam(required = false) String endDate,  // 입사일 범위 끝
       @RequestParam(required = false) String status, // 상태 (완전 일치)
-      @RequestParam(defaultValue = "name") String sortField,
-      @RequestParam(defaultValue = "asc") String sortDirection,
+      @RequestParam(required = false) String sortField,
+      @RequestParam(required = false) String sortDirection,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "10") int size
 
   ) {
-
+    if(sortDirection==null||sortDirection.isEmpty()){
+      sortDirection="asc";
+    }
     CursorPageResponseEmployeeDto employees = employeeService.getEmployees(keyword, department, position,
         employeeNumber, startDate, endDate, status,sortField,sortDirection,cursor,size);
 
     return ResponseEntity.ok(employees);
   }
 
-  @PostMapping
-  public ResponseEntity<EmployeeDto> createEmployee(@RequestPart EmployeeCreateRequest employeeCreateRequest,
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<EmployeeDto> createEmployee(@RequestPart(value = "employeeCreateRequest",required = false) EmployeeCreateRequest employeeCreateRequest,
       @RequestPart(value = "profile",required = false) MultipartFile profile) {
     EmployeeDto createEmployee=employeeService.createEmployee(employeeCreateRequest,profile);
     return ResponseEntity.status(HttpStatus.CREATED).body(createEmployee);
@@ -69,9 +73,11 @@ public class EmployeeController {
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
-  @PatchMapping(value = "/{employeeId}")
-  public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable("employeeId") Long employeeId,
-      @RequestPart EmployeeUpdateRequest employeeUpdateRequest,
+  @PatchMapping(value = "/{employeeId}",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<EmployeeDto> updateEmployee(
+      @PathVariable("employeeId") Long employeeId,
+      @RequestPart(value = "employeeUpdateRequest") EmployeeUpdateRequest employeeUpdateRequest,
       @RequestPart(value = "profile",required = false) MultipartFile profile) {
     EmployeeDto updateEmployee=employeeService.updateEmployee(employeeId,employeeUpdateRequest,profile);
     return ResponseEntity.ok(updateEmployee);
