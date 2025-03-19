@@ -2,20 +2,27 @@ spring:
   application:
     name: sb1-hrbank-team03
   datasource:
-    url: jdbc:h2:mem:testdb  # H2 메모리 데이터베이스 URL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
+    url: jdbc:postgresql://localhost:5432/hrbank
+    username: public_user
+    password: 1234
   jpa:
     hibernate:
-      ddl-auto: update  # 자동으로 테이블 생성
+#      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
     open-in-view: false
 
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+hrbank:
+  storage:
+    type: local
+    local:
+      root-path: .hrbank/data
 
 logging:
   level:
