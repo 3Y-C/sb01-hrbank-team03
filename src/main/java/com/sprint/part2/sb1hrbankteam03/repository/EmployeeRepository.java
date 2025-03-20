@@ -17,12 +17,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>,
 
   @Query(value = "SELECT " +
       "TO_CHAR(e.hire_date, :format) AS date, " +
-      "(SELECT COUNT(*) FROM employee e2 WHERE e2.hire_date <= e.hire_date) AS totalCount, " +
+      "(SELECT COUNT(*) FROM employees e2 WHERE e2.hire_date <= e.hire_date) AS totalCount, " +
       "COUNT(e.id) AS changeCount, " +
-      "CASE WHEN (SELECT COUNT(*) FROM employee e2 WHERE e2.hire_date <= e.hire_date) > 0 " +
-      "     THEN (COUNT(e.id) * 100.0 / (SELECT COUNT(*) FROM employee e2 WHERE e2.hire_date <= e.hire_date)) "+
+      "CASE WHEN (SELECT COUNT(*) FROM employees e2 WHERE e2.hire_date <= e.hire_date) > 0 " +
+      "     THEN (COUNT(e.id) * 100.0 / (SELECT COUNT(*) FROM employees e2 WHERE e2.hire_date <= e.hire_date)) " +
       "     ELSE 0 END AS changeRatio " +
-      "FROM employee e " +
+      "FROM employees e " +
       "WHERE e.hire_date BETWEEN :startDate AND :endDate " +
       "GROUP BY e.hire_date, TO_CHAR(e.hire_date, :format) " +
       "ORDER BY TO_CHAR(e.hire_date, :format)",
