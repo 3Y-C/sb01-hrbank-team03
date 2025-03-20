@@ -3,6 +3,7 @@ package com.sprint.part2.sb1hrbankteam03.dto.employeeHistory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+
 @Getter
 @AllArgsConstructor
 public class EmployeeChangeInfo {
