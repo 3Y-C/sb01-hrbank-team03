@@ -1,12 +1,10 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
-import com.sprint.part2.sb1hrbankteam03.dto.PageResponse;
-import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.ChangeLogDto;
+import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -28,46 +26,26 @@ public class EmployeeHistoryController {
 
   private final EmployeeHistoryService employeeHistoryService;
 
-  // 이력 목록 조회 (검색 & 필터링 & 정렬 & 페이지네이션)
-/*  @GetMapping
-  public ResponseEntity<Page<ChangeLogDto>> getChangeLogs(
-      @RequestParam(required = false) String employeeNumber,
-      @RequestParam(required = false) String memo,
-      @RequestParam(required = false) String ipAddress,
-      @RequestParam(required = false) ChangeType changeType,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "editedAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortDirection) {
-
-    Page<ChangeLogDto> historyList = employeeHistoryService.getChangeLogs(
-        employeeNumber, memo, ipAddress, changeType, startTime, endTime, page, size, sortBy, sortDirection);
-
-    return ResponseEntity.ok(historyList);
-  }*/
-
-  @GetMapping("/api/change-logs")
-  public ResponseEntity<PageResponse<ChangeLogDto>> getChangeLogs(
+  @GetMapping
+  public ResponseEntity<CursorPageResponseChangeLogDto> getChangeLogs(
       @RequestParam(value = "employeeNumber", required = false) String employeeNumber,
       @RequestParam(value = "memo", required = false) String memo,
       @RequestParam(value = "ipAddress", required = false) String ipAddress,
       @RequestParam(value = "type", required = false) ChangeType changeType,
       @RequestParam(value = "atFrom", required = false) Instant atFrom,
       @RequestParam(value = "atTo", required = false) Instant atTo,
-      @RequestParam(value = "cursor", required = false) Instant cursor,
+      @RequestParam(value = "cursor", required = false) String cursor,
+      @RequestParam(value = "idAfter", required = false) Long idAfter,
       @RequestParam(value = "sortField", defaultValue = "at") String sortField,
       @RequestParam(value = "sortDirection", defaultValue = "DESC") String sortDirection,
-      @PageableDefault(size = 10) Pageable pageable) {
+      @PageableDefault(size = 30) Pageable pageable) {
 
-    PageResponse<ChangeLogDto> changeLogs = employeeHistoryService.getChangeLogs(
-        employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, sortField, sortDirection, pageable
+    CursorPageResponseChangeLogDto changeLogs = employeeHistoryService.getChangeLogs(
+        employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, idAfter, sortField, sortDirection, pageable
     );
 
     return ResponseEntity.status(HttpStatus.OK).body(changeLogs);
   }
-
 
   // 특정 이력의 변경 상세 내역 조회
   @GetMapping("/{id}/diffs")

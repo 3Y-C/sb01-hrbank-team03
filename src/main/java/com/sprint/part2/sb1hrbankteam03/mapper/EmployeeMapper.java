@@ -10,6 +10,12 @@ import org.springframework.stereotype.Component;
 public class EmployeeMapper {
 
   public EmployeeDto todto(Employee savedEmployee) {
+
+    Long profileId = null;
+    if (savedEmployee.getProfileImage() != null) {
+      profileId = savedEmployee.getProfileImage().getId();
+    }
+
     return new EmployeeDto(
         savedEmployee.getId(),
         savedEmployee.getName(),
@@ -20,7 +26,7 @@ public class EmployeeMapper {
         savedEmployee.getPosition(),
         savedEmployee.getHireDate().toString(),
         savedEmployee.getStatus().toString(),
-        savedEmployee.getProfileImage().getId()
+        profileId
     );
   }
 
