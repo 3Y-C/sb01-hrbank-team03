@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS "employees" (
     "hire_date" DATE NOT NULL,
     "status" "employee_status_enum" DEFAULT 'ACTIVE',
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "update_at" TIMESTAMP NULL,
+    "updated_at" TIMESTAMP NULL,
     FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE SET NULL
 );
 
@@ -52,9 +52,10 @@ CREATE TABLE IF NOT EXISTS "employee_historys" (
 CREATE TABLE IF NOT EXISTS "employee_change_details" (
     "id" BIGINT NOT NULL PRIMARY KEY,
     "history_id" BIGINT NOT NULL,
-    "propertyName" VARCHAR(10) NULL,
+    "property_name" VARCHAR(10) NULL,
     "before" VARCHAR(255) NULL,
     "after" VARCHAR(255) NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("history_id") REFERENCES "employee_historys"("id") ON DELETE CASCADE
 );
 

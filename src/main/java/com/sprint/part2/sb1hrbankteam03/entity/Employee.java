@@ -21,6 +21,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "employees")
 public class Employee extends BaseUpdatableEntity {
 
   @Column(length = 100,nullable = false)
