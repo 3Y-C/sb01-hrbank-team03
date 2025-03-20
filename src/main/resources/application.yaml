@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: sb1-hrbank-team03
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/hrbank}
+    username: ${SPRING_DATASOURCE_USERNAME:hrbank_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:yyyc}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    open-in-view: false
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+hrbank:
+  storage:
+    type: local
+    local:
+      root-path: ${HRBANK_STORAGE_ROOT_PATH:.hrbank/data}
+
+backup:
+  scheduler:
+    enabled: ${BACKUP_SCHEDULER_ENABLED:true}
+  interval:
+    milliseconds: ${BACKUP_INTERVAL_MS:3600000}
+
+server:
+  forward-headers-strategy: native
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.jdbc.core.JdbcTemplate: DEBUG
+    org.springframework.jdbc.core.StatementCreatorUtils: TRACE
