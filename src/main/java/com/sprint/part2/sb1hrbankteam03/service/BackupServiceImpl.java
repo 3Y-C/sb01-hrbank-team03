@@ -186,12 +186,15 @@ public class BackupServiceImpl implements BackupService {
             employees = employees.subList(0, pageSize);
           }
 
+          writer.write("ID,직원번호,이름,이메일,부서,직급,입사일,상태\n");
+
           for (Employee employee : employees) {
-            writer.write(String.format("%d,%s,%s,%s,%s,%s,%s\n",
+            writer.write(String.format("%d,%s,%s,%s,%s,%s,%s,%s\n",
                 employee.getId(),
+                employee.getEmployeeNumber(),
                 employee.getName(),
                 employee.getEmail(),
-                employee.getDepartment(),
+                employee.getDepartment().getName(),
                 employee.getPosition(),
                 employee.getHireDate(),
                 employee.getStatus()
