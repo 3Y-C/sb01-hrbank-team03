@@ -22,7 +22,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class EmployeeHistory extends BaseEntity {
 
-  @Column(name = "emloyee_number",nullable = false)
+  @Column(name = "employee_number",nullable = false)
   String employeeNumber;
 
   @Column(name = "type")
