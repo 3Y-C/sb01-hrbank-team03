@@ -83,7 +83,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         .toList();
 
     String nextCursor = employees.isEmpty() ? null : String.valueOf(employees.get(employees.size() - 1).getId());
-    int totalElements = (int) employeeRepository.countByStatus(employeeStatus);
+    int totalElements = (int) employeeRepository.count();
     boolean hasNext = employees.size() == size;
 
     return employeeMapper.toPageDto(employeeDtos, nextCursor, idAfter, size, totalElements, hasNext);
@@ -278,7 +278,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     Status employeeStatus = (status != null) ? Status.from(status) : null;
 
     LocalDate now = LocalDate.now();
-    LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : null;
+    LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : LocalDate.of(1900,1,1);
     LocalDate end = (toDate != null) ? LocalDate.parse(toDate) : now;
 
     if (start != null && end != null) {
