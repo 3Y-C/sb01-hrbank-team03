@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS "employee_change_details" (
     "propertyName" VARCHAR(10) NULL,
     "before" VARCHAR(255) NULL,
     "after" VARCHAR(255) NULL,
-    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("history_id") REFERENCES "employee_historys"("id") ON DELETE CASCADE
 );
 

@@ -120,12 +120,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     List<EmployeeChangeDetail> details = new ArrayList<>();
     Instant now = Instant.now();
-    details.add(new EmployeeChangeDetail(history, "name", null, savedEmployee.getName(), now));
-    details.add(new EmployeeChangeDetail(history, "email", null, savedEmployee.getEmail(), now));
-    details.add(new EmployeeChangeDetail(history, "department", null, department.getName(), now));
-    details.add(new EmployeeChangeDetail(history, "position", null, savedEmployee.getPosition(), now));
-    details.add(new EmployeeChangeDetail(history, "hireDate", null, savedEmployee.getHireDate().toString(), now));
-    details.add(new EmployeeChangeDetail(history, "status", null, savedEmployee.getStatus().name(), now));
+    details.add(new EmployeeChangeDetail(history, "name", null, savedEmployee.getName()));
+    details.add(new EmployeeChangeDetail(history, "email", null, savedEmployee.getEmail()));
+    details.add(new EmployeeChangeDetail(history, "department", null, department.getName()));
+    details.add(new EmployeeChangeDetail(history, "position", null, savedEmployee.getPosition()));
+    details.add(new EmployeeChangeDetail(history, "hireDate", null, savedEmployee.getHireDate().toString()));
+    details.add(new EmployeeChangeDetail(history, "status", null, savedEmployee.getStatus().name()));
 
     employeeHistoryService.saveChangeDetails(history, details);
 
@@ -153,12 +153,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     Instant now = Instant.now();
     List<EmployeeChangeDetail> details = new ArrayList<>();
-    details.add(new EmployeeChangeDetail(history, "name", employee.getName(), null, now));
-    details.add(new EmployeeChangeDetail(history, "email", employee.getEmail(), null, now));
-    details.add(new EmployeeChangeDetail(history, "department", employee.getDepartment().getName(), null, now));
-    details.add(new EmployeeChangeDetail(history, "position", employee.getPosition(), null, now));
-    details.add(new EmployeeChangeDetail(history, "hireDate", employee.getHireDate().toString(), null, now));
-    details.add(new EmployeeChangeDetail(history, "status", employee.getStatus().name(), null, now));
+    details.add(new EmployeeChangeDetail(history, "name", employee.getName(), null));
+    details.add(new EmployeeChangeDetail(history, "email", employee.getEmail(), null));
+    details.add(new EmployeeChangeDetail(history, "department", employee.getDepartment().getName(), null));
+    details.add(new EmployeeChangeDetail(history, "position", employee.getPosition(), null));
+    details.add(new EmployeeChangeDetail(history, "hireDate", employee.getHireDate().toString(), null));
+    details.add(new EmployeeChangeDetail(history, "status", employee.getStatus().name(), null));
 
 
     localFileStorage.delete(employee.getProfileImage().getId());
@@ -185,23 +185,23 @@ public class EmployeeServiceImpl implements EmployeeService {
     Instant now = Instant.now();
 
     if (!Objects.equals(employee.getName(), request.getName())) {
-      changeDetails.add(new EmployeeChangeDetail(null, "name", employee.getName(), request.getName(), now));
+      changeDetails.add(new EmployeeChangeDetail(null, "name", employee.getName(), request.getName()));
       employee.setName(request.getName());
     }
 
     if (!Objects.equals(employee.getEmail(), request.getEmail())) {
       validateEmailUnique(request.getEmail());
-      changeDetails.add(new EmployeeChangeDetail(null, "email", employee.getEmail(), request.getEmail(), now));
+      changeDetails.add(new EmployeeChangeDetail(null, "email", employee.getEmail(), request.getEmail()));
       employee.setEmail(request.getEmail());
     }
 
     if (!Objects.equals(employee.getDepartment().getId(), department.getId())) {
-      changeDetails.add(new EmployeeChangeDetail(null, "department", employee.getDepartment().getName(), department.getName(), now));
+      changeDetails.add(new EmployeeChangeDetail(null, "department", employee.getDepartment().getName(), department.getName()));
       employee.setDepartment(department);
     }
 
     if (!Objects.equals(employee.getPosition(), request.getPosition())) {
-      changeDetails.add(new EmployeeChangeDetail(null, "position", employee.getPosition(), request.getPosition(), now));
+      changeDetails.add(new EmployeeChangeDetail(null, "position", employee.getPosition(), request.getPosition()));
       employee.setPosition(request.getPosition());
     }
 
@@ -209,13 +209,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     LocalDate newHireDate = validateAndParseDate(request.getHireDate());
 
     if (!Objects.equals(employee.getHireDate(), newHireDate)) {
-      changeDetails.add(new EmployeeChangeDetail(null, "hireDate", employee.getHireDate().toString(), newHireDate.toString(), now));
+      changeDetails.add(new EmployeeChangeDetail(null, "hireDate", employee.getHireDate().toString(), newHireDate.toString()));
       employee.setHireDate(newHireDate);
     }
 
     Status newStatus = Status.valueOf(request.getStatus());
     if (!Objects.equals(employee.getStatus(), newStatus)) {
-      changeDetails.add(new EmployeeChangeDetail(null, "status", employee.getStatus().name(), newStatus.name(), now));
+      changeDetails.add(new EmployeeChangeDetail(null, "status", employee.getStatus().name(), newStatus.name()));
       employee.setStatus(newStatus);
     }
 

@@ -1,6 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.service;
 
-import com.sprint.part2.sb1hrbankteam03.dto.PageResponse;
+import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.ChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
@@ -8,11 +8,10 @@ import com.sprint.part2.sb1hrbankteam03.entity.EmployeeChangeDetail;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeChangeDetailMapper;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeHistoryMapper;
-import com.sprint.part2.sb1hrbankteam03.mapper.PageResponseMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeChangeDetailRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,12 +28,11 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
   private final EmployeeHistoryRepository employeeHistoryRepository;
   private final EmployeeChangeDetailRepository employeeChangeDetailRepository;
   private final EmployeeHistoryMapper employeeHistoryMapper;
-  private final PageResponseMapper pageResponseMapper;
   private final EmployeeChangeDetailMapper employeeChangeDetailMapper;
 
   @Override
   public EmployeeHistory createHistory(String employeeNumber, ChangeType type, String memo) {
-    String ipAddress = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest().getRemoteAddr();
+    String ipAddress = getClientIp();
     Instant now = Instant.now();
 
     // 메모 디폴트 처리
@@ -63,24 +61,33 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
 
 
   @Transactional(readOnly = true)
-  public PageResponse<ChangeLogDto> getChangeLogs(
+  public CursorPageResponseChangeLogDto getChangeLogs(
       String employeeNumber, String memo, String ipAddress, ChangeType changeType,
-      Instant atFrom, Instant atTo, Instant cursor, String sortField,
+      Instant atFrom, Instant atTo, String cursor, Long idAfter, String sortField,
       String sortDirection, Pageable pageable) {
 
-    // 동적 쿼리 처리: 조건에 맞는 데이터 필터링
+    // 쿼리 실행
     Slice<EmployeeHistory> slice = employeeHistoryRepository.findAllWithFilters(
-        employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, pageable
+        employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, idAfter, pageable, sortField, sortDirection
     );
 
-    // 커서 처리
-    Instant nextCursor = null;
+    // DTO 변환
+    Slice<ChangeLogDto> dtoSlice = slice.map(employeeHistoryMapper::toDto);
+
+    // 커서 계산 (정렬 필드에 따라 동적 처리)
+    String nextCursor = null;
     if (!slice.getContent().isEmpty()) {
-      nextCursor = slice.getContent().get(slice.getContent().size() - 1).getAt();
+      EmployeeHistory last = slice.getContent().get(slice.getContent().size() - 1);
+      if ("ipAddress".equals(sortField)) {
+        nextCursor = last.getIpAddress();
+      } else {
+        nextCursor = last.getAt().toString();  // 기본: at
+      }
     }
 
-    Slice<ChangeLogDto> dtoSlice = slice.map(employeeHistoryMapper::toDto);
-    return pageResponseMapper.fromSlice(dtoSlice, nextCursor);
+    Long totalElements = employeeHistoryRepository.countByFilters(employeeNumber, memo, ipAddress, changeType, atFrom, atTo);
+
+    return employeeHistoryMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
 
   @Override
@@ -101,5 +108,22 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
   @Override
   public long getChangeLogCount(Instant fromDate, Instant toDate) {
     return employeeHistoryRepository.countByAtBetween(fromDate, toDate);
+  }
+
+  private String getClientIp() {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+    String ip = request.getHeader("X-Forwarded-For");
+
+    if (ip != null && !ip.isBlank() && !"unknown".equalsIgnoreCase(ip)) {
+      ip = ip.split(",")[0].trim();
+    } else {
+      ip = request.getRemoteAddr();
+    }
+
+    if ("0:0:0:0:0:0:0:1".equals(ip)) {
+      ip = "127.0.0.1";
+    }
+
+    return ip;
   }
 }
