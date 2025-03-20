@@ -47,7 +47,6 @@ public class BackupServiceImpl implements BackupService {
   private final FileStorage fileStorage;
 
   @Override
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public BackupDto createBackup(String workerIp) {
 
     //가장 최근 성공한 백업 이력을 가져온다
@@ -131,7 +130,11 @@ public class BackupServiceImpl implements BackupService {
   @Override
   @Transactional(readOnly = true)
   public BackupDto getLatestBackup(String status) {
-    BackupStatus backupStatus = BackupStatus.valueOf(status);
+
+    BackupStatus backupStatus = BackupStatus.COMPLETED;
+    if (status != null) {
+      backupStatus = BackupStatus.valueOf(status);
+    }
 
     Backup latestBackup = backupRepository.findTopByStatusOrderByEndAtDesc(backupStatus)
         .orElse(null);

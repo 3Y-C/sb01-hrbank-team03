@@ -15,6 +15,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -41,7 +43,8 @@ public class Employee extends BaseUpdatableEntity {
 
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(nullable = false, name = "status", columnDefinition = "employee_status_enum")
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private Status status;
 
   @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
