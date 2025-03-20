@@ -161,7 +161,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     details.add(new EmployeeChangeDetail(history, "status", employee.getStatus().name(), null));
 
 
-    localFileStorage.delete(employee.getProfileImage().getId());
+    FileMetaData profileImage = employee.getProfileImage();
+    if (profileImage != null) {
+      localFileStorage.delete(profileImage.getId());
+    }
     employeeRepository.delete(employee);
     employeeHistoryService.saveChangeDetails(history, details);
   }
