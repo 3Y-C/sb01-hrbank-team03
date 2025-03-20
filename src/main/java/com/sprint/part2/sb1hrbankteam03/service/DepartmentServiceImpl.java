@@ -127,7 +127,7 @@ public class DepartmentServiceImpl implements DepartmentService{
         })
         .collect(Collectors.toList());
 
-    Integer totalDepartments = departmentRepository.countDepartments();
+    Integer totalDepartments = departmentRepository.countDepartmentsByCondition(nameOrDescription);
 
     return departmentMapper.toCursorPageResponseDto(departmentList,
         nextCursor,
