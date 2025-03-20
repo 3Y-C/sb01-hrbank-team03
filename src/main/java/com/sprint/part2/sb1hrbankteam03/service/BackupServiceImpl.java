@@ -62,7 +62,7 @@ public class BackupServiceImpl implements BackupService {
 
     //가져왔다면 가장 최근 변경 이력을 가져온다.
     List<EmployeeHistory> byEditedHistoryAtAfter = employeeHistoryRepository
-        .findByAtAfterOrderByAtDesc(latestBackup.getEndAt().toInstant(ZoneOffset.UTC));
+        .findByAtAfterOrderByAtDesc(latestBackup.getCreatedAt());
     //todo- zone offset 논의필요?
 
     //최근 변경 이력이 마지막 백업(건너뛰지않은)시간보다 나중이라면 변경이 생긴 것이므로, 백업 파일을 만들어야한다.
@@ -273,9 +273,10 @@ public class BackupServiceImpl implements BackupService {
   private ParsedBackupDto getParsedRequestBackupDto(RequestBackupDto requestBackupDto) {
 
     String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
+    BackupStatus backupStatus =null;
+    if(requestBackupDto.getStatus() == null || requestBackupDto.getStatus().isEmpty()){
 
-    BackupStatus backupStatus = requestBackupDto.getStatus() == null ? null
-        : BackupStatus.valueOf(requestBackupDto.getStatus());
+    }
 
     //startedAtFrom 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최소값으로 설정
     LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);

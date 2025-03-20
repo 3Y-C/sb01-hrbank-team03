@@ -16,8 +16,8 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
   Optional<Backup> findTopByStatusOrderByEndAtDesc(BackupStatus status);
 
   //조건 일치하는 백업 이력 조회 - 시작 시간 오름차순
-  @Query("SELECT b FROM Backup b "
-      + "WHERE (:status IS NULL OR b.status = :status) " +
+  @Query("SELECT b FROM Backup b " +
+      "WHERE ((b.status = :status ) OR ( cast(:status as string) IS NULL))" +
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
@@ -34,8 +34,8 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       Pageable pageable);
 
   //조건 일치하는 백업 이력 조회 - 시작 시간 내림차순
-  @Query("SELECT b FROM Backup b "
-      + "WHERE (:status IS NULL OR b.status = :status) " +
+  @Query("SELECT b FROM Backup b " +
+      "WHERE ((b.status = :status ) OR ( cast(:status as string) IS NULL))" +
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
@@ -53,8 +53,8 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
 
 
   //조건 일치하는 백업 이력 조회 - 종료 시간 오름차순
-  @Query("SELECT b FROM Backup b "
-      + "WHERE (:status IS NULL OR b.status = :status) " +
+  @Query("SELECT b FROM Backup b " +
+      "WHERE ((b.status = :status ) OR ( cast(:status as string) IS NULL))" +
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
@@ -73,7 +73,7 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
 
   //조건 일치하는 백업 이력 조회 - 종료 시간 내림차순
   @Query("SELECT b FROM Backup b "
-      + "WHERE (:status IS NULL OR b.status = :status) " +
+      + "WHERE ((b.status = :status ) OR ( cast(:status as string) IS NULL))" +
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
@@ -96,15 +96,17 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
 
 
   // 조건 결과 개수
-  @Query("SELECT COUNT(b) FROM Backup b " +
-      "WHERE (:status IS NULL OR b.status = :status) " +
+  @Query(value = "SELECT COUNT(b) FROM Backup b " +
+      "WHERE ((b.status = :status ) OR ( cast(:status as string) IS NULL))" +
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
-      "AND (b.startAt <= :startAtTo) ")
+      "AND (b.startAt <= :startAtTo)")
   long countByConditions(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
       @Param("startAtFrom") LocalDateTime startAtFrom,
       @Param("startAtTo") LocalDateTime startAtTo
   );
+
+  long count();
 }
