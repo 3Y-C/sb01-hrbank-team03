@@ -12,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 
 @Entity
@@ -25,8 +27,9 @@ public class EmployeeHistory extends BaseEntity {
   @Column(name = "employee_number",nullable = false)
   String employeeNumber;
 
-  @Column(name = "type")
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false, name = "type", columnDefinition = "history_type_enum")
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   ChangeType changeType;
 
   @Column(name = "memo")

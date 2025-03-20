@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,6 +11,8 @@ import java.time.LocalDateTime;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
@@ -20,6 +23,8 @@ public class Backup extends BaseEntity {
   private String workerIp;
   // 백업 작업 상태 IN_PROGRESS, COMPLETED, FAILED, SKIPPED
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false, name = "status", columnDefinition = "backup_status_enum")
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private BackupStatus status;
   // 시작 시간
   private LocalDateTime startAt;
