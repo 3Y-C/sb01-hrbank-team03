@@ -41,7 +41,6 @@ public class Employee extends BaseUpdatableEntity {
   @Column(nullable = false)
   private LocalDate hireDate;
 
-
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, name = "status", columnDefinition = "employee_status_enum")
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
