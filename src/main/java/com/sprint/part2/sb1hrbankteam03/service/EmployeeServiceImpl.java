@@ -83,7 +83,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         .toList();
 
     String nextCursor = employees.isEmpty() ? null : String.valueOf(employees.get(employees.size() - 1).getId());
-    int totalElements = (int) employeeRepository.count();
+    int totalElements = (int) getTotalEmployeeCount(status,startDate,endDate);
     boolean hasNext = employees.size() == size;
 
     return employeeMapper.toPageDto(employeeDtos, nextCursor, idAfter, size, totalElements, hasNext);
