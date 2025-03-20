@@ -43,4 +43,10 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   @Query("SELECT COUNT(d) FROM Department d")
   Integer countDepartments();
 
+
+  @Query("SELECT COUNT(d) FROM Department d WHERE "
+      + "(:nameOrDescription IS NULL OR d.name LIKE %:nameOrDescription% OR d.description LIKE %:nameOrDescription%)")
+  Integer countDepartmentsByCondition(@Param("nameOrDescription") String nameOrDescription);
+
+
 }
