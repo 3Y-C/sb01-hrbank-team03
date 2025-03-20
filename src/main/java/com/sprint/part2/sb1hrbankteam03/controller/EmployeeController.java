@@ -8,6 +8,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.service.EmployeeServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,8 +62,9 @@ public class EmployeeController {
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<EmployeeDto> createEmployee(
       @RequestPart("employee") EmployeeCreateRequest  employeeCreateRequest,
-      @RequestPart(value = "profile",required = false) MultipartFile profile) {
-    EmployeeDto createEmployee=employeeService.createEmployee(employeeCreateRequest,profile);
+      @RequestPart(value = "profile",required = false) MultipartFile profile, HttpServletRequest request) {
+    String ipAddress = extractClientIp(request);
+    EmployeeDto createEmployee=employeeService.createEmployee(employeeCreateRequest,profile, ipAddress);
     return ResponseEntity.status(HttpStatus.CREATED).body(createEmployee);
   }
 
@@ -72,8 +74,9 @@ public class EmployeeController {
   }
 
   @DeleteMapping(value = "/{employeeId}")
-  public ResponseEntity<Void> deleteEmployee(@PathVariable("employeeId") Long employeeId) {
-    employeeService.deleteEmployee(employeeId);
+  public ResponseEntity<Void> deleteEmployee(@PathVariable("employeeId") Long employeeId, HttpServletRequest request) {
+    String ipAddress = extractClientIp(request);
+    employeeService.deleteEmployee(employeeId, ipAddress);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
@@ -82,8 +85,9 @@ public class EmployeeController {
   public ResponseEntity<EmployeeDto> updateEmployee(
       @PathVariable("employeeId") Long employeeId,
       @RequestPart(value = "employee") EmployeeUpdateRequest employeeUpdateRequest,
-      @RequestPart(value = "profile",required = false) MultipartFile profile) {
-    EmployeeDto updateEmployee=employeeService.updateEmployee(employeeId,employeeUpdateRequest,profile);
+      @RequestPart(value = "profile",required = false) MultipartFile profile, HttpServletRequest request) {
+    String ipAddress = extractClientIp(request);
+    EmployeeDto updateEmployee=employeeService.updateEmployee(employeeId,employeeUpdateRequest,profile, ipAddress);
     return ResponseEntity.ok(updateEmployee);
   }
 
@@ -117,4 +121,17 @@ public class EmployeeController {
     return ResponseEntity.ok(count);
   }
 
+  private String extractClientIp(HttpServletRequest request) {
+    String ip = request.getHeader("X-Forwarded-For");
+    if (ip == null || ip.isBlank()) {
+      ip = request.getRemoteAddr();
+    } else {
+      ip = ip.split(",")[0].trim();
+    }
+    // IPv6 루프백 주소 처리
+    if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+      ip = "127.0.0.1";
+    }
+    return ip;
+  }
 }
