@@ -10,14 +10,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class BackupMapper {
 
-  private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
   public BackupDto toDto(Backup backup) {
     return new BackupDto(
         Integer.parseInt(String.valueOf(backup.getId())),
         backup.getWorkerIp(),
-        backup.getStartAt().atZone(KOREA_ZONE_ID).toString(),
-        backup.getEndAt() == null ? null : backup.getEndAt().atZone(KOREA_ZONE_ID).toString(),
+        backup.getStartAt().toString(),
+        backup.getEndAt() == null ? null : backup.getEndAt().toString(),
         backup.getStatus().toString(),
         backup.getBackupFile() == null? null : Integer.parseInt(String.valueOf(backup.getBackupFile().getId()))
     );
