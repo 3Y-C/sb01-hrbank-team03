@@ -10,11 +10,14 @@ import com.sprint.part2.sb1hrbankteam03.entity.QEmployee;
 import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.stereotype.Repository;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Repository;
 
 @Repository
 public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
@@ -28,19 +31,29 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     this.queryFactory = new JPAQueryFactory(em);
   }
 
+  private static final Map<String, String> SORT_FIELD_MAP = Map.of(
+      "name", "name",
+      "employeeNumber", "employeeNumber",
+      "hireDate", "hireDate",
+      "id", "id"
+  );
+
   @Override
-  public List<Employee> findEmployeesWithFilters(String keyword, String department, String position,
-      String employeeNumber, LocalDate startDate, LocalDate endDate, Long idAfter, Status status,
-      Pageable pageable) {
+  public Slice<Employee> findEmployeesWithFilters(
+      String keyword, String department, String position,
+      String employeeNumber, LocalDate startDate, LocalDate endDate,
+      String cursor, Long idAfter, String sortField, String sortDirection,
+      Status status, Pageable pageable
+  ) {
     QEmployee e = QEmployee.employee;
-    QDepartment d=QDepartment.department;
+    QDepartment d = QDepartment.department;
 
     BooleanBuilder whereClause = new BooleanBuilder();
 
+    // 기본 검색 조건
     if (keyword != null && !keyword.isEmpty()) {
-      whereClause.and(
-          e.name.containsIgnoreCase(keyword)
-              .or(e.email.containsIgnoreCase(keyword)));
+      whereClause.and(e.name.containsIgnoreCase(keyword)
+          .or(e.email.containsIgnoreCase(keyword)));
     }
     if (department != null && !department.isEmpty()) {
       whereClause.and(d.name.containsIgnoreCase(department));
@@ -57,30 +70,65 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     if (endDate != null) {
       whereClause.and(e.hireDate.loe(endDate));
     }
-    if (idAfter != null) {
-      whereClause.and(e.id.gt(idAfter));
-    }
     if (status != null) {
       whereClause.and(e.status.eq(status));
     }
 
+    // 커서 조건 추가
+    whereClause.and(buildCursorCondition(e, cursor, idAfter, sortField, sortDirection));
 
-    return queryFactory
+    // size + 1 조회로 다음 페이지 존재 여부 판단
+    int pageSize = pageable.getPageSize() + 1;
+
+    List<Employee> content = queryFactory
         .selectFrom(e)
-        .leftJoin(e.department,d).fetchJoin()
+        .leftJoin(e.department, d).fetchJoin()
         .where(whereClause)
-        .orderBy(getOrderSpecifiers(pageable,e))
-        .offset(pageable.getOffset())
-        .limit(pageable.getPageSize())
+        .orderBy(getOrderSpecifiers(pageable, e))
         .fetch();
+
+    boolean hasNext = content.size() > pageable.getPageSize();
+    if (hasNext) {
+      content.remove(content.size() - 1); // 초과 데이터 제거
+    }
+
+    return new SliceImpl<>(content, pageable, hasNext);
   }
 
-  private static final Map<String, String> SORT_FIELD_MAP = Map.of(
-      "name", "name",
-      "employeeNumber", "employeeNumber",
-      "hireDate", "hireDate"
-  );
+  // 커서 조건 빌더
+  private BooleanBuilder buildCursorCondition(QEmployee e, String cursor, Long idAfter, String sortField, String sortDirection) {
+    BooleanBuilder builder = new BooleanBuilder();
+    if (cursor == null || cursor.isEmpty()) return builder;
 
+    boolean isDesc = "desc".equalsIgnoreCase(sortDirection);
+
+    switch (sortField) {
+      case "name":
+        if (isDesc) {
+          builder.and(e.name.lt(cursor).or(e.name.eq(cursor).and(e.id.lt(idAfter))));
+        } else {
+          builder.and(e.name.gt(cursor).or(e.name.eq(cursor).and(e.id.gt(idAfter))));
+        }
+        break;
+      case "hireDate":
+        LocalDate hireCursor = LocalDate.parse(cursor);
+        if (isDesc) {
+          builder.and(e.hireDate.lt(hireCursor).or(e.hireDate.eq(hireCursor).and(e.id.lt(idAfter))));
+        } else {
+          builder.and(e.hireDate.gt(hireCursor).or(e.hireDate.eq(hireCursor).and(e.id.gt(idAfter))));
+        }
+        break;
+      default:
+        if (idAfter != null) {
+          builder.and(isDesc ? e.id.lt(idAfter) : e.id.gt(idAfter));
+        }
+        break;
+    }
+
+    return builder;
+  }
+
+  // 정렬 조건
   private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QEmployee e) {
     return pageable.getSort().stream()
         .map(order -> {

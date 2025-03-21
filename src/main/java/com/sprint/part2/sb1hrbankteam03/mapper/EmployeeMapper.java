@@ -5,6 +5,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import java.util.List;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -31,16 +32,38 @@ public class EmployeeMapper {
     );
   }
 
-  public CursorPageResponseEmployeeDto toPageDto(List<EmployeeDto> employeeDtoList,
-      String nextCursor, Long nextIdAfter, int size, Integer totalElements, boolean hasNext) {
+
+  public CursorPageResponseEmployeeDto fromSlice(
+      Slice<EmployeeDto> slice, String sortField, int totalElements) {
+
+    String nextCursor = null;
+    Long nextIdAfter = null;
+
+    if (!slice.getContent().isEmpty() && slice.hasNext()) {
+      EmployeeDto last = slice.getContent().get(slice.getContent().size() - 1);
+
+      switch (sortField) {
+        case "name":
+          nextCursor = last.getName();
+          break;
+        case "hireDate":
+          nextCursor = last.getHireDate(); // 이미 String 형식
+          break;
+        default:
+          nextCursor = String.valueOf(last.getId());
+          break;
+      }
+
+      nextIdAfter = last.getId();
+    }
 
     return new CursorPageResponseEmployeeDto(
-        employeeDtoList,
+        slice.getContent(),
         nextCursor,
         nextIdAfter,
-        size,
+        slice.getSize(),
         totalElements,
-        hasNext
+        slice.hasNext()
     );
   }
 
