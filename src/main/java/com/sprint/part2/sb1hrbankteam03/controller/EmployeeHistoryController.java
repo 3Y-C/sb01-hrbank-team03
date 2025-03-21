@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.sprint.part2.sb1hrbankteam03.config.api.EmployHistoryApi;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/change-logs")
 @RequiredArgsConstructor
-public class EmployeeHistoryController {
+public class EmployeeHistoryController implements EmployHistoryApi {
 
   private final EmployeeHistoryService employeeHistoryService;
 
@@ -41,7 +42,8 @@ public class EmployeeHistoryController {
       @PageableDefault(size = 30) Pageable pageable) {
 
     CursorPageResponseChangeLogDto changeLogs = employeeHistoryService.getChangeLogs(
-        employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, idAfter, sortField, sortDirection, pageable
+        employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, idAfter, sortField,
+        sortDirection, pageable
     );
 
     return ResponseEntity.status(HttpStatus.OK).body(changeLogs);

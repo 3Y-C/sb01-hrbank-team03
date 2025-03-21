@@ -15,7 +15,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Department", description = "부서 관련 API")
+@Tag(name = "부서 관리", description = "부서 관련 API")
 public interface DepartmentApi {
 
   @Operation(summary = "부서 생성", description = "새로운 부서를 생성합니다.")
