@@ -8,7 +8,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
-import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeChangeInfo;
+import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
 import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
@@ -87,7 +87,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     return employeeMapper.toPageDto(employeeDtos, nextCursor, idAfter, size, totalElements, hasNext);
   }
 
-
   @Override
   @Transactional
   public EmployeeDto createEmployee(EmployeeCreateRequest request, MultipartFile profile, String ipAddress) {
@@ -114,16 +113,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     Employee savedEmployee = employeeRepository.save(employee);
 
-    List<EmployeeChangeInfo> infos = List.of(
-        new EmployeeChangeInfo("name", null, savedEmployee.getName()),
-        new EmployeeChangeInfo("email", null, savedEmployee.getEmail()),
-        new EmployeeChangeInfo("department", null, department.getName()),
-        new EmployeeChangeInfo("position", null, savedEmployee.getPosition()),
-        new EmployeeChangeInfo("hireDate", null, savedEmployee.getHireDate().toString()),
-        new EmployeeChangeInfo("status", null, savedEmployee.getStatus().name())
-    );
-
-    employeeHistoryService.createHistoryWithDetails(savedEmployee.getEmployeeNumber(), ChangeType.CREATED, request.getMemo(), infos, ipAddress);
+    EmployeeSnapshotDto afterSnapshot = employeeMapper.toSnapshotDto(savedEmployee);
+    employeeHistoryService.recordHistoryFromSnapshot(null, afterSnapshot, ChangeType.CREATED, request.getMemo(), ipAddress);
 
     return employeeMapper.todto(savedEmployee);
   }
@@ -134,36 +125,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         .map(employeeMapper::todto)
         .orElseThrow(()->new IllegalArgumentException("Employee id: " + employeeId + " not found."));
   }
-
-
-  @Override
-  @Transactional
-  public void deleteEmployee(Long employeeId, String ipAddress) {
-    Employee employee = employeeRepository.findById(employeeId)
-        .orElseThrow(() -> new IllegalArgumentException("직원을 찾을 수 없습니다."));
-
-    if (employee.getStatus().equals(Status.RESIGNED)) {
-      throw new IllegalArgumentException("이미 퇴사한 직원");
-    }
-
-    List<EmployeeChangeInfo> infos = List.of(
-        new EmployeeChangeInfo("name", employee.getName(), null),
-        new EmployeeChangeInfo("email", employee.getEmail(), null),
-        new EmployeeChangeInfo("department", employee.getDepartment().getName(), null),
-        new EmployeeChangeInfo("position", employee.getPosition(), null),
-        new EmployeeChangeInfo("hireDate", employee.getHireDate().toString(), null),
-        new EmployeeChangeInfo("status", employee.getStatus().name(), null)
-    );
-
-    employeeHistoryService.createHistoryWithDetails(employee.getEmployeeNumber(), ChangeType.DELETED, null, infos, ipAddress);
-
-    FileMetaData profileImage = employee.getProfileImage();
-    if (profileImage != null) {
-      localFileStorage.delete(profileImage.getId());
-    }
-    employeeRepository.delete(employee);
-  }
-
 
   @Override
   @Transactional
@@ -178,39 +139,18 @@ public class EmployeeServiceImpl implements EmployeeService {
     Department department = departmentRepository.findById(request.getDepartmentId())
         .orElseThrow(() -> new IllegalArgumentException("부서를 찾을 수 없습니다."));
 
-    List<EmployeeChangeInfo> infos = new ArrayList<>();
+    EmployeeSnapshotDto beforeSnapshot = employeeMapper.toSnapshotDto(employee);
 
-    if (!Objects.equals(employee.getName(), request.getName())) {
-      infos.add(new EmployeeChangeInfo("name", employee.getName(), request.getName()));
-      employee.setName(request.getName());
-    }
-
-    if (!Objects.equals(employee.getEmail(), request.getEmail())) {
-      infos.add(new EmployeeChangeInfo("email", employee.getEmail(), request.getEmail()));
-      employee.setEmail(request.getEmail());
-    }
-
-    if (!Objects.equals(employee.getDepartment().getId(), department.getId())) {
-      infos.add(new EmployeeChangeInfo("department", employee.getDepartment().getName(), department.getName()));
-      employee.setDepartment(department);
-    }
-
-    if (!Objects.equals(employee.getPosition(), request.getPosition())) {
-      infos.add(new EmployeeChangeInfo("position", employee.getPosition(), request.getPosition()));
-      employee.setPosition(request.getPosition());
-    }
+    employee.setName(request.getName());
+    employee.setEmail(request.getEmail());
+    employee.setDepartment(department);
+    employee.setPosition(request.getPosition());
 
     LocalDate newHireDate = validateAndParseDate(request.getHireDate());
-    if (!Objects.equals(employee.getHireDate(), newHireDate)) {
-      infos.add(new EmployeeChangeInfo("hireDate", employee.getHireDate().toString(), newHireDate.toString()));
-      employee.setHireDate(newHireDate);
-    }
+    employee.setHireDate(newHireDate);
 
     Status newStatus = Status.valueOf(request.getStatus());
-    if (!Objects.equals(employee.getStatus(), newStatus)) {
-      infos.add(new EmployeeChangeInfo("status", employee.getStatus().name(), newStatus.name()));
-      employee.setStatus(newStatus);
-    }
+    employee.setStatus(newStatus);
 
     if (profile != null) {
       FileMetaData deleteFileMetaData = employee.getProfileImage();
@@ -219,13 +159,34 @@ public class EmployeeServiceImpl implements EmployeeService {
       employee.setProfileImage(fileMetaData);
     }
 
-    employeeHistoryService.createHistoryWithDetails(
-        employee.getEmployeeNumber(), ChangeType.UPDATED, request.getMemo(), infos, ipAddress);
+    EmployeeSnapshotDto afterSnapshot = employeeMapper.toSnapshotDto(employee);
+
+    employeeHistoryService.recordHistoryFromSnapshot(beforeSnapshot, afterSnapshot, ChangeType.UPDATED, request.getMemo(), ipAddress);
 
     return employeeMapper.todto(employee);
   }
 
+  @Override
+  @Transactional
+  public void deleteEmployee(Long employeeId, String ipAddress) {
+    Employee employee = employeeRepository.findById(employeeId)
+        .orElseThrow(() -> new IllegalArgumentException("직원을 찾을 수 없습니다."));
 
+
+/*    if (employee.getStatus().equals(Status.RESIGNED)) {
+      throw new IllegalArgumentException("이미 퇴사한 직원");
+    }*/
+
+    EmployeeSnapshotDto beforeSnapshot = employeeMapper.toSnapshotDto(employee);
+    employeeHistoryService.recordHistoryFromSnapshot(beforeSnapshot, null, ChangeType.DELETED, null, ipAddress);
+
+    FileMetaData profileImage = employee.getProfileImage();
+    if (profileImage != null) {
+      localFileStorage.delete(profileImage.getId());
+    }
+
+    employeeRepository.delete(employee);
+  }
 
 
   @Override

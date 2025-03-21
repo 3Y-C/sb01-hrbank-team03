@@ -2,6 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.mapper;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
+import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -42,4 +43,17 @@ public class EmployeeMapper {
         hasNext
     );
   }
+
+  public EmployeeSnapshotDto toSnapshotDto(Employee employee) {
+    return new EmployeeSnapshotDto(
+        employee.getEmployeeNumber(),
+        employee.getName(),
+        employee.getEmail(),
+        employee.getDepartment().getName(),
+        employee.getPosition(),
+        employee.getHireDate().toString(),
+        employee.getStatus().name()
+    );
+  }
+
 }

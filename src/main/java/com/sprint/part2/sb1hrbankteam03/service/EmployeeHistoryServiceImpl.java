@@ -4,6 +4,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseCh
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.ChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeChangeInfo;
+import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
 import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeChangeDetail;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
@@ -12,7 +13,9 @@ import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeHistoryMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeChangeDetailRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -30,9 +33,10 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
 
   @Override
   @Transactional
-  public EmployeeHistory createHistoryWithDetails(String employeeNumber, ChangeType type, String memo, List<EmployeeChangeInfo> infos, String ipAddress) {
-    Instant now = Instant.now();
+  public void recordHistoryFromSnapshot(EmployeeSnapshotDto before, EmployeeSnapshotDto after, ChangeType type, String memo, String ipAddress) {
+    String employeeNumber = (after != null) ? after.getEmployeeNumber() : before.getEmployeeNumber();
 
+    Instant now = Instant.now();
     String finalMemo = (memo == null || memo.isBlank()) ? switch (type) {
       case CREATED -> "신규 직원 등록";
       case UPDATED -> "직원 정보 수정";
@@ -43,12 +47,47 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
     EmployeeHistory history = new EmployeeHistory(employeeNumber, type, finalMemo, ipAddress, now);
     employeeHistoryRepository.save(history);
 
+    List<EmployeeChangeInfo> infos = new ArrayList<>();
+
+    if (type == ChangeType.CREATED && after != null) {
+      infos.add(new EmployeeChangeInfo("name", null, after.getName()));
+      infos.add(new EmployeeChangeInfo("email", null, after.getEmail()));
+      infos.add(new EmployeeChangeInfo("department", null, after.getDepartment()));
+      infos.add(new EmployeeChangeInfo("position", null, after.getPosition()));
+      infos.add(new EmployeeChangeInfo("hireDate", null, after.getHireDate()));
+      infos.add(new EmployeeChangeInfo("status", null, after.getStatus()));
+    } else if (type == ChangeType.DELETED && before != null) {
+      infos.add(new EmployeeChangeInfo("name", before.getName(), null));
+      infos.add(new EmployeeChangeInfo("email", before.getEmail(), null));
+      infos.add(new EmployeeChangeInfo("department", before.getDepartment(), null));
+      infos.add(new EmployeeChangeInfo("position", before.getPosition(), null));
+      infos.add(new EmployeeChangeInfo("hireDate", before.getHireDate(), null));
+      infos.add(new EmployeeChangeInfo("status", before.getStatus(), null));
+    } else if (type == ChangeType.UPDATED && before != null && after != null) {
+      if (!Objects.equals(before.getName(), after.getName())) {
+        infos.add(new EmployeeChangeInfo("name", before.getName(), after.getName()));
+      }
+      if (!Objects.equals(before.getEmail(), after.getEmail())) {
+        infos.add(new EmployeeChangeInfo("email", before.getEmail(), after.getEmail()));
+      }
+      if (!Objects.equals(before.getDepartment(), after.getDepartment())) {
+        infos.add(new EmployeeChangeInfo("department", before.getDepartment(), after.getDepartment()));
+      }
+      if (!Objects.equals(before.getPosition(), after.getPosition())) {
+        infos.add(new EmployeeChangeInfo("position", before.getPosition(), after.getPosition()));
+      }
+      if (!Objects.equals(before.getHireDate(), after.getHireDate())) {
+        infos.add(new EmployeeChangeInfo("hireDate", before.getHireDate(), after.getHireDate()));
+      }
+      if (!Objects.equals(before.getStatus(), after.getStatus())) {
+        infos.add(new EmployeeChangeInfo("status", before.getStatus(), after.getStatus()));
+      }
+    }
     List<EmployeeChangeDetail> details = infos.stream()
         .map(info -> new EmployeeChangeDetail(history, info.getField(), info.getOldValue(), info.getNewValue()))
         .toList();
 
     employeeChangeDetailRepository.saveAll(details);
-    return history;
   }
 
 
