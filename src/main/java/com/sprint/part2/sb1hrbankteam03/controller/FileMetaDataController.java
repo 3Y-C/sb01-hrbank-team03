@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.sprint.part2.sb1hrbankteam03.config.api.FileMetaDataApi;
 import com.sprint.part2.sb1hrbankteam03.service.FileMetaDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/files")
-public class FileMetaDataController {
+public class FileMetaDataController implements FileMetaDataApi {
 
   private final FileMetaDataService fileMetaDataService;
 
   @GetMapping("{fileMetaDataId}/download")
-  public ResponseEntity<?> download(@PathVariable("fileMetaDataId") Long fileMetaDataId){
+  public ResponseEntity<?> download(@PathVariable("fileMetaDataId") Long fileMetaDataId) {
     return fileMetaDataService.download(fileMetaDataId);
   }
 }
