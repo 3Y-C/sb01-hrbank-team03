@@ -1,6 +1,6 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
-import static com.sprint.part2.sb1hrbankteam03.entity.Status.ACTIVE;
+import static com.sprint.part2.sb1hrbankteam03.entity.enums.Status.ACTIVE;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
@@ -9,24 +9,25 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
-import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
-import com.sprint.part2.sb1hrbankteam03.entity.Status;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeService;
+import com.sprint.part2.sb1hrbankteam03.service.FileMetaDataService;
 import com.sprint.part2.sb1hrbankteam03.stroage.LocalFileStorage;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

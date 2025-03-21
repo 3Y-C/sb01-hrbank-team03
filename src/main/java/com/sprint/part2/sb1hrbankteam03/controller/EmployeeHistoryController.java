@@ -2,7 +2,7 @@ package com.sprint.part2.sb1hrbankteam03.controller;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

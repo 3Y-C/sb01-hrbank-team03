@@ -1,4 +1,4 @@
-package com.sprint.part2.sb1hrbankteam03.repository;
+package com.sprint.part2.sb1hrbankteam03.repository.custom;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
@@ -7,7 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.entity.QDepartment;
 import com.sprint.part2.sb1hrbankteam03.entity.QEmployee;
-import com.sprint.part2.sb1hrbankteam03.entity.Status;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;

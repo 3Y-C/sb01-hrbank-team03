@@ -1,6 +1,6 @@
-package com.sprint.part2.sb1hrbankteam03.repository;
+package com.sprint.part2.sb1hrbankteam03.repository.custom;
 
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
 import java.time.Instant;
 import org.springframework.data.domain.Pageable;

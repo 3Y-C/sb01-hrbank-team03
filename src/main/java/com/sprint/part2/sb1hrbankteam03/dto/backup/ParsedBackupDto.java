@@ -1,6 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.dto.backup;
 
-import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.BackupStatus;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

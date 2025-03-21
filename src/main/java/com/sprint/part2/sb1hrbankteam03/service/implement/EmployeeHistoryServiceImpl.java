@@ -1,17 +1,18 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.ChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeChangeInfo;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeChangeDetail;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeChangeDetailMapper;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeHistoryMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeChangeDetailRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.entity;
 
+import com.sprint.part2.sb1hrbankteam03.entity.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
