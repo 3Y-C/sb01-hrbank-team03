@@ -12,7 +12,7 @@ public class DepartmentMapper {
   // 정적 상수로 DateTimeFormatter 선언
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
   public DepartmentDto toDto(Department department, Integer employeeCount) {
-    String establishedDate = department.getEstablishDate().format(DATE_FORMATTER);
+    String establishedDate = department.getEstablished_date().format(DATE_FORMATTER);
     return new DepartmentDto(
         department.getId(),
         department.getName(),
