@@ -1,7 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.repository;
 
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
-import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.BackupStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;

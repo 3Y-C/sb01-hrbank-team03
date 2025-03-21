@@ -1,6 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.entity;
 
-import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
+import com.sprint.part2.sb1hrbankteam03.entity.base.BaseUpdatableEntity;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

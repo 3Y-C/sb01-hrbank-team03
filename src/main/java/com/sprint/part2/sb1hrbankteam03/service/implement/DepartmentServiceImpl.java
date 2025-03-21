@@ -1,4 +1,4 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
@@ -7,6 +7,7 @@ import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
 import com.sprint.part2.sb1hrbankteam03.mapper.DepartmentMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
+import com.sprint.part2.sb1hrbankteam03.service.DepartmentService;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
@@ -24,7 +25,7 @@ import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
 @Service
-public class DepartmentServiceImpl implements DepartmentService{
+public class DepartmentServiceImpl implements DepartmentService {
 
   private final DepartmentRepository departmentRepository;
   private final DepartmentMapper departmentMapper;

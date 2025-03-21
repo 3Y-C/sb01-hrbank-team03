@@ -1,8 +1,9 @@
 package com.sprint.part2.sb1hrbankteam03.repository;
 
-import com.sprint.part2.sb1hrbankteam03.entity.Status;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 
+import com.sprint.part2.sb1hrbankteam03.repository.custom.EmployeeRepositoryCustom;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Page;

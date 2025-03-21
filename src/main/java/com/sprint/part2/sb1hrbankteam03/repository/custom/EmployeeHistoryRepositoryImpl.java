@@ -1,11 +1,11 @@
-package com.sprint.part2.sb1hrbankteam03.repository;
+package com.sprint.part2.sb1hrbankteam03.repository.custom;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
 import com.sprint.part2.sb1hrbankteam03.entity.QEmployeeHistory;
 import jakarta.persistence.EntityManager;

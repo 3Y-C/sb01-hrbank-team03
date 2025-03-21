@@ -1,9 +1,10 @@
 package com.sprint.part2.sb1hrbankteam03.entity;
 
+import com.sprint.part2.sb1hrbankteam03.entity.base.BaseEntity;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.FileCategory;
 import jakarta.persistence.Entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
@@ -21,7 +22,7 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "file_meta_data")
-public class FileMetaData extends BaseEntity{
+public class FileMetaData extends BaseEntity {
 
   @Column(name = "name",nullable = false)
   String fileName;
