@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.sprint.part2.sb1hrbankteam03.config.api.DepartmentApi;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentGetRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/departments")
-public class DepartmentController {
+public class DepartmentController implements DepartmentApi {
   private final DepartmentService departmentService;
 
   //부서 생성
