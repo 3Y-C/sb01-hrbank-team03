@@ -1,5 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.service.implement;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseDepartmentDto;
@@ -100,11 +102,21 @@ public class DepartmentServiceImpl implements DepartmentService {
     // 정렬 필드
     String validSortField = sortField.equals("name") ? "name" : "establishDate";
 
-    // null 이거나 빈 문자열인지 검사
     Long startId = null;
     if (cursor != null && !cursor.isEmpty()) {
-      String decodedCursor = new String(Base64.getDecoder().decode(cursor));
-      startId = Long.valueOf(decodedCursor); // 커서에서 ID를 추출
+      try {
+        // Base64 디코딩
+        String decodedCursor = new String(Base64.getDecoder().decode(cursor));
+
+        // JSON 파싱을 위해 Jackson ObjectMapper 사용
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(decodedCursor);
+
+        // 'id' 값을 Long으로 추출
+        startId = jsonNode.get("id").asLong();  // "id" 필드 값을 Long으로 추출
+      } catch (Exception e) {
+        throw new IllegalArgumentException("잘못된 커서 형식입니다.", e);
+      }
     }
 
     Pageable pageable = PageRequest.of(0, size, Sort.by(direction, validSortField));
