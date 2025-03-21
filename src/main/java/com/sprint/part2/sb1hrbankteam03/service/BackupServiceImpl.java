@@ -17,13 +17,15 @@ import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.FileMetaDataRepository;
 import com.sprint.part2.sb1hrbankteam03.stroage.FileStorage;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -63,7 +64,6 @@ public class BackupServiceImpl implements BackupService {
     //가져왔다면 가장 최근 변경 이력을 가져온다.
     List<EmployeeHistory> byEditedHistoryAtAfter = employeeHistoryRepository
         .findByAtAfterOrderByAtDesc(latestBackup.getCreatedAt());
-    //todo- zone offset 논의필요?
 
     //최근 변경 이력이 마지막 백업(건너뛰지않은)시간보다 나중이라면 변경이 생긴 것이므로, 백업 파일을 만들어야한다.
     //사이즈가 0이면, 배치 작업 이후 최근 변경 이력이 없는 것이므로 "건너뜀"으로 생성후, 결과 반환
@@ -71,8 +71,8 @@ public class BackupServiceImpl implements BackupService {
       Backup backup = new Backup(
           workerIp,
           BackupStatus.SKIPPED,
-          LocalDateTime.now(),
-          LocalDateTime.now(),
+          LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")),
+          LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")),
           null
       );
       backupRepository.save(backup);
@@ -95,11 +95,12 @@ public class BackupServiceImpl implements BackupService {
     ParsedBackupDto parsedBackupDto = getParsedRequestBackupDto(requestBackupDto);
 
     List<Backup> backups; //결과를 담을 리스트
-    backups = sortBackups(parsedBackupDto, requestBackupDto.getSortField(), requestBackupDto.getSortDirection());
+    backups = sortBackups(parsedBackupDto, requestBackupDto.getSortField(),
+        requestBackupDto.getSortDirection());
 
     int size = parsedBackupDto.getPageSize();
     //다음 페이지 존재하는지 확인하기
-    boolean hasNext = backups.size() > size ;
+    boolean hasNext = backups.size() > size;
 
     // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
     if (hasNext) {
@@ -116,7 +117,6 @@ public class BackupServiceImpl implements BackupService {
     List<BackupDto> backupDtos = backups.stream()
         .map(backupMapper::toDto)
         .toList();
-
 
     return backupMapper.toPageDto(
         backupDtos,
@@ -149,7 +149,7 @@ public class BackupServiceImpl implements BackupService {
     Backup backup = new Backup(
         workerIp,
         BackupStatus.IN_PROGRESS,
-        LocalDateTime.now(),
+        LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")),
         null,
         null
     );
@@ -158,7 +158,8 @@ public class BackupServiceImpl implements BackupService {
 
     try {
       String fileName =
-          "employee_backup_" + LocalDateTime.now().toString().replace(":", "-") + ".csv";
+          "employee_backup_" + LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul"))
+.toString().replace(":", "-") + ".csv";
       String fileType = "text/csv";
 
       //임시 파일 생성
@@ -224,7 +225,7 @@ public class BackupServiceImpl implements BackupService {
 
         //완료된 경우 backup 상태 바꾸고 파일 메타 저장
         backup.setStatus(BackupStatus.COMPLETED);
-        backup.setEndAt(LocalDateTime.now());
+        backup.setEndAt(LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")));
         backup.setBackupFile(savedFile);
         Backup save = backupRepository.save(backup);
         return save;
@@ -239,12 +240,13 @@ public class BackupServiceImpl implements BackupService {
   private void handleBackupFailure(Exception e, Backup backup) {
     try {
       //에러 log 파일 생성
-      String fileName = "backup_error_" + LocalDateTime.now().toString().replace(":", "-") + ".log";
+      String fileName = "backup_error_" + LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul"))
+.toString().replace(":", "-") + ".log";
       String fileType = "text/plain";
 
       // 에러 메세지
       String errorMessage = String.format("Backup failed at %s\nError: %s\nStack trace: %s",
-          LocalDateTime.now(),
+          LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")),
           e.getMessage(),
           Arrays.toString(e.getStackTrace()));
 
@@ -273,8 +275,8 @@ public class BackupServiceImpl implements BackupService {
   private ParsedBackupDto getParsedRequestBackupDto(RequestBackupDto requestBackupDto) {
 
     String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
-    BackupStatus backupStatus =null;
-    if(requestBackupDto.getStatus() == null || requestBackupDto.getStatus().isEmpty()){
+    BackupStatus backupStatus = null;
+    if (requestBackupDto.getStatus() == null || requestBackupDto.getStatus().isEmpty()) {
 
     }
 
