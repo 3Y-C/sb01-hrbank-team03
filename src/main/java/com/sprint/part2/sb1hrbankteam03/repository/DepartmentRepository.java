@@ -1,6 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.repository;
 
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
+import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -63,22 +64,24 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
   @Query("SELECT d FROM Department d WHERE " +
       "(:nameOrDescription IS NULL OR " +
-      "d.name LIKE %:nameOrDescription% OR " +
-      "d.description LIKE %:nameOrDescription%) AND " +
-      "(:lastFieldValue IS NULL OR d.establishDate > :lastFieldValue) " +
-      "ORDER BY d.establishDate ASC")
-  Page<Department> searchDepartmentsByDateAsc(@Param("nameOrDescription") String nameOrDescription,
-      @Param("lastFieldValue") String lastFieldValue,
+      "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
+      "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
+      "(CAST(:lastFieldValue AS date) IS NULL OR d.established_date > CAST(:lastFieldValue AS date)) " +
+      "ORDER BY d.established_date DESC")
+  Page<Department> searchDepartmentsByDateAscNativeASC(
+      @Param("nameOrDescription") String nameOrDescription,
+      @Param("lastFieldValue") LocalDate lastFieldValue,
       Pageable pageable);
 
   @Query("SELECT d FROM Department d WHERE " +
       "(:nameOrDescription IS NULL OR " +
-      "d.name LIKE %:nameOrDescription% OR " +
-      "d.description LIKE %:nameOrDescription%) AND " +
-      "(:lastFieldValue IS NULL OR d.establishDate < :lastFieldValue) " +
-      "ORDER BY d.establishDate DESC")
-  Page<Department> searchDepartmentsByDateDesc(@Param("nameOrDescription") String nameOrDescription,
-      @Param("lastFieldValue") String lastFieldValue,
+      "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
+      "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
+      "(CAST(:lastFieldValue AS date) IS NULL OR d.established_date < CAST(:lastFieldValue AS date)) " +
+      "ORDER BY d.established_date DESC")
+  Page<Department> searchDepartmentsByDateAscNativeDesc(
+      @Param("nameOrDescription") String nameOrDescription,
+      @Param("lastFieldValue") LocalDate lastFieldValue,
       Pageable pageable);
 
 

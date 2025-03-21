@@ -13,6 +13,7 @@ import com.sprint.part2.sb1hrbankteam03.service.DepartmentService;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -101,7 +102,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 
     // 정렬 필드
-    String validSortField = sortField.equals("name") ? "name" : "establishDate";
+    String validSortField = sortField.equals("name") ? "name" : "established_date";
 
     Long startId = null;
     if (cursor != null && !cursor.isEmpty()) {
@@ -123,24 +124,26 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     Pageable pageable = PageRequest.of(0, size, Sort.by(direction, validSortField));
     Page<Department> departments = null;
-
+    Department departmentt;
     if(cursor.equals("")){
       departments = departmentRepository.searchDepartments(nameOrDescription,startId,pageable);
     }else{
-      Department departmentt = departmentRepository.findById(startId)
+      departmentt = departmentRepository.findById(startId)
           .orElseThrow(() -> new NoSuchElementException("Department with id not found"));
-      String startName = departmentt.getName();
       if(validSortField == "name"){
+        String startName = departmentt.getName();
         if(direction == Direction.ASC){
           departments= departmentRepository.searchDepartmentsByNameAsc(nameOrDescription,startName,pageable);
         }else{
           departments= departmentRepository.searchDepartmentsByNameDesc(nameOrDescription,startName,pageable);
         }
       }else{
+        LocalDate startData = departmentt.getEstablished_date();
         if(direction == Direction.ASC){
-          departments= departmentRepository.searchDepartmentsByDateAsc(nameOrDescription,startName,pageable);
+
+          departments= departmentRepository.searchDepartmentsByDateAscNativeASC(nameOrDescription,startData,pageable);
         }else{
-          departments= departmentRepository.searchDepartmentsByDateDesc(nameOrDescription,startName,pageable);
+          departments= departmentRepository.searchDepartmentsByDateAscNativeDesc(nameOrDescription,startData,pageable);
         }
       }
     }
