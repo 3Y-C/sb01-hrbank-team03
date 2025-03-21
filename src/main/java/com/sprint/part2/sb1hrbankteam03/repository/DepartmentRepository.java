@@ -66,22 +66,29 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       "(:nameOrDescription IS NULL OR " +
       "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
       "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
-      "(CAST(:lastFieldValue AS date) IS NULL OR d.established_date > CAST(:lastFieldValue AS date)) " +
+      "((CAST(:lastFieldValue AS date) IS NULL) OR " +
+      "((d.name = CAST(:name AS String) AND d.established_date > CAST(:lastFieldValue AS date)) OR " +
+      "(d.name != CAST(:name AS String) AND d.established_date >= CAST(:lastFieldValue AS date)))) " +
       "ORDER BY d.established_date ASC")
   Page<Department> searchDepartmentsByDateAscNativeASC(
       @Param("nameOrDescription") String nameOrDescription,
       @Param("lastFieldValue") LocalDate lastFieldValue,
+      @Param("name") String name,
       Pageable pageable);
+
 
   @Query("SELECT d FROM Department d WHERE " +
       "(:nameOrDescription IS NULL OR " +
       "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
       "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
-      "(CAST(:lastFieldValue AS date) IS NULL OR d.established_date < CAST(:lastFieldValue AS date)) " +
+      "(CAST(:lastFieldValue AS date) IS NULL OR " +
+      "((d.id != CAST(:lastFieldId AS Long) AND d.established_date < CAST(:lastFieldValue AS date)) OR " +
+      "(d.id = CAST(:lastFieldId AS Long) AND d.established_date <= CAST(:lastFieldValue AS date)))) " +
       "ORDER BY d.established_date DESC")
   Page<Department> searchDepartmentsByDateAscNativeDesc(
       @Param("nameOrDescription") String nameOrDescription,
       @Param("lastFieldValue") LocalDate lastFieldValue,
+      @Param("name") String name,
       Pageable pageable);
 
 
