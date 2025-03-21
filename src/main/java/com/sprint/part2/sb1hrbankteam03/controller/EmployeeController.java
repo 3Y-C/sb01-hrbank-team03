@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.sprint.part2.sb1hrbankteam03.common.util.IpUtils;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDistributionDto;
@@ -32,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class EmployeeController {
 
   private final EmployeeServiceImpl employeeService;
+  private final IpUtils ipUtils;
 
   @GetMapping
   public ResponseEntity<CursorPageResponseEmployeeDto> getEmployees(
@@ -61,7 +63,7 @@ public class EmployeeController {
   public ResponseEntity<EmployeeDto> createEmployee(
       @RequestPart("employee") EmployeeCreateRequest  employeeCreateRequest,
       @RequestPart(value = "profile",required = false) MultipartFile profile, HttpServletRequest request) {
-    String ipAddress = extractClientIp(request);
+    String ipAddress = ipUtils.getClientIp(request);
     EmployeeDto createEmployee=employeeService.createEmployee(employeeCreateRequest,profile, ipAddress);
     return ResponseEntity.status(HttpStatus.CREATED).body(createEmployee);
   }
@@ -73,7 +75,7 @@ public class EmployeeController {
 
   @DeleteMapping(value = "/{employeeId}")
   public ResponseEntity<Void> deleteEmployee(@PathVariable("employeeId") Long employeeId, HttpServletRequest request) {
-    String ipAddress = extractClientIp(request);
+    String ipAddress = ipUtils.getClientIp(request);
     employeeService.deleteEmployee(employeeId, ipAddress);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
@@ -84,7 +86,7 @@ public class EmployeeController {
       @PathVariable("employeeId") Long employeeId,
       @RequestPart(value = "employee") EmployeeUpdateRequest employeeUpdateRequest,
       @RequestPart(value = "profile",required = false) MultipartFile profile, HttpServletRequest request) {
-    String ipAddress = extractClientIp(request);
+    String ipAddress = ipUtils.getClientIp(request);
     EmployeeDto updateEmployee=employeeService.updateEmployee(employeeId,employeeUpdateRequest,profile, ipAddress);
     return ResponseEntity.ok(updateEmployee);
   }
@@ -119,17 +121,4 @@ public class EmployeeController {
     return ResponseEntity.ok(count);
   }
 
-  private String extractClientIp(HttpServletRequest request) {
-    String ip = request.getHeader("X-Forwarded-For");
-    if (ip == null || ip.isBlank()) {
-      ip = request.getRemoteAddr();
-    } else {
-      ip = ip.split(",")[0].trim();
-    }
-    // IPv6 루프백 주소 처리
-    if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
-      ip = "127.0.0.1";
-    }
-    return ip;
-  }
 }
