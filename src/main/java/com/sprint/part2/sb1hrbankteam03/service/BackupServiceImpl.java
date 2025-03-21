@@ -149,8 +149,7 @@ public class BackupServiceImpl implements BackupService {
     Backup backup = new Backup(
         workerIp,
         BackupStatus.IN_PROGRESS,
-        LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul"))
-,
+        LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")),
         null,
         null
     );
@@ -247,8 +246,7 @@ public class BackupServiceImpl implements BackupService {
 
       // 에러 메세지
       String errorMessage = String.format("Backup failed at %s\nError: %s\nStack trace: %s",
-          LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul"))
-,
+          LocalDateTime.ofInstant(Instant.now(), ZoneId.of("Asia/Seoul")),
           e.getMessage(),
           Arrays.toString(e.getStackTrace()));
 
