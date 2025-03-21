@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -63,7 +61,6 @@ public class BackupServiceImpl implements BackupService {
     //가져왔다면 가장 최근 변경 이력을 가져온다.
     List<EmployeeHistory> byEditedHistoryAtAfter = employeeHistoryRepository
         .findByAtAfterOrderByAtDesc(latestBackup.getCreatedAt());
-    //todo- zone offset 논의필요?
 
     //최근 변경 이력이 마지막 백업(건너뛰지않은)시간보다 나중이라면 변경이 생긴 것이므로, 백업 파일을 만들어야한다.
     //사이즈가 0이면, 배치 작업 이후 최근 변경 이력이 없는 것이므로 "건너뜀"으로 생성후, 결과 반환
