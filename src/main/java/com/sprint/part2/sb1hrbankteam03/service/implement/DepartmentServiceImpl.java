@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -119,11 +120,33 @@ public class DepartmentServiceImpl implements DepartmentService {
       }
     }
 
+
     Pageable pageable = PageRequest.of(0, size, Sort.by(direction, validSortField));
+    Page<Department> departments = null;
 
-    //부서 조회
-    Page<Department> departments = departmentRepository.searchDepartments(nameOrDescription, startId, pageable);
+    if(cursor.equals("")){
+      departments = departmentRepository.searchDepartments(nameOrDescription,startId,pageable);
+    }else{
+      Department departmentt = departmentRepository.findById(startId)
+          .orElseThrow(() -> new NoSuchElementException("Department with id not found"));
+      String startName = departmentt.getName();
+      if(validSortField == "name"){
+        if(direction == Direction.ASC){
+          departments= departmentRepository.searchDepartmentsByNameAsc(nameOrDescription,startName,pageable);
+        }else{
+          departments= departmentRepository.searchDepartmentsByNameDesc(nameOrDescription,startName,pageable);
+        }
+      }else{
+        if(direction == Direction.ASC){
+          departments= departmentRepository.searchDepartmentsByDateAsc(nameOrDescription,startName,pageable);
+        }else{
+          departments= departmentRepository.searchDepartmentsByDateDesc(nameOrDescription,startName,pageable);
+        }
+      }
+    }
 
+
+    int currentPageSize = departments.getContent().size();
 
     // 다음 페이지를 위한 커서 설정 base64 인코딩, 디코딩으로
     // "{"id":" 인코딩하면 "eyJpZCI6" 나오고, "}" 디코딩하면 "fQ==" 값이 나온다.
@@ -145,7 +168,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     return departmentMapper.toCursorPageResponseDto(departmentList,
         nextCursor,
         nextIdAfter,
-        size,
+        currentPageSize,
         totalDepartments,
         departments.hasNext());
   }

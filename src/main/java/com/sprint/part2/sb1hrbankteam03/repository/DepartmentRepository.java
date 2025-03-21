@@ -16,26 +16,15 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
   @Query("SELECT COUNT(e) FROM Employee e WHERE e.department.id = :departmentId")
   Integer countEmployeesByDepartmentId(@Param("departmentId") Long departmentId);
 
-//  //부서 이름이나 설명을 기준으로 검색하고, 시작 ID 이상인 부서들을 조회
+//  //PostgreSql
 //  @Query("SELECT d FROM Department d WHERE " +
 //      "(:nameOrDescription IS NULL OR " +
-//      "LOWER(d.name) LIKE LOWER(CONCAT('%', :nameOrDescription, '%')) OR " +
-//      "LOWER(d.description) LIKE LOWER(CONCAT('%', :nameOrDescription, '%'))) " +
+//      "d.name ILIKE '%' || :nameOrDescription || '%' OR " +
+//      "d.description ILIKE '%' || :nameOrDescription || '%') " +
 //      "AND (:startId IS NULL OR d.id > :startId)")
 //  Page<Department> searchDepartments(@Param("nameOrDescription") String nameOrDescription,
 //      @Param("startId") Long startId,
 //      Pageable pageable);
-
-
-  //PostgreSql
-  @Query("SELECT d FROM Department d WHERE " +
-      "(:nameOrDescription IS NULL OR " +
-      "d.name ILIKE '%' || :nameOrDescription || '%' OR " +
-      "d.description ILIKE '%' || :nameOrDescription || '%') " +
-      "AND (:startId IS NULL OR d.id > :startId)")
-  Page<Department> searchDepartments(@Param("nameOrDescription") String nameOrDescription,
-      @Param("startId") Long startId,
-      Pageable pageable);
 
   boolean existsByName(String name);
 
@@ -48,5 +37,59 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       + "(:nameOrDescription IS NULL OR d.name LIKE %:nameOrDescription% OR d.description LIKE %:nameOrDescription%)")
   Integer countDepartmentsByCondition(@Param("nameOrDescription") String nameOrDescription);
 
+
+  // ASC 전용
+  @Query("SELECT d FROM Department d WHERE " +
+      "(:nameOrDescription IS NULL OR " +
+      "d.name ILIKE CONCAT('%', :nameOrDescription, '%') OR " +
+      "d.description ILIKE CONCAT('%', :nameOrDescription, '%')) AND " +
+      "(:lastFieldValue IS NULL OR d.name > :lastFieldValue) " +
+      "ORDER BY d.name ASC")
+  Page<Department> searchDepartmentsByNameAsc(@Param("nameOrDescription") String nameOrDescription,
+      @Param("lastFieldValue") String lastFieldValue,
+      Pageable pageable);
+
+  // DESC 전용
+  @Query("SELECT d FROM Department d WHERE " +
+      "(:nameOrDescription IS NULL OR " +
+      "d.name ILIKE CONCAT('%', :nameOrDescription, '%') OR " +
+      "d.description ILIKE CONCAT('%', :nameOrDescription, '%')) AND " +
+      "(:lastFieldValue IS NULL OR d.name < :lastFieldValue) " +
+      "ORDER BY d.name DESC")
+  Page<Department> searchDepartmentsByNameDesc(@Param("nameOrDescription") String nameOrDescription,
+      @Param("lastFieldValue") String lastFieldValue,
+      Pageable pageable);
+
+
+  @Query("SELECT d FROM Department d WHERE " +
+      "(:nameOrDescription IS NULL OR " +
+      "d.name LIKE %:nameOrDescription% OR " +
+      "d.description LIKE %:nameOrDescription%) AND " +
+      "(:lastFieldValue IS NULL OR d.establishDate > :lastFieldValue) " +
+      "ORDER BY d.establishDate ASC")
+  Page<Department> searchDepartmentsByDateAsc(@Param("nameOrDescription") String nameOrDescription,
+      @Param("lastFieldValue") String lastFieldValue,
+      Pageable pageable);
+
+  @Query("SELECT d FROM Department d WHERE " +
+      "(:nameOrDescription IS NULL OR " +
+      "d.name LIKE %:nameOrDescription% OR " +
+      "d.description LIKE %:nameOrDescription%) AND " +
+      "(:lastFieldValue IS NULL OR d.establishDate < :lastFieldValue) " +
+      "ORDER BY d.establishDate DESC")
+  Page<Department> searchDepartmentsByDateDesc(@Param("nameOrDescription") String nameOrDescription,
+      @Param("lastFieldValue") String lastFieldValue,
+      Pageable pageable);
+
+
+//맨 처음 요청
+@Query("SELECT d FROM Department d WHERE " +
+    "(:nameOrDescription IS NULL OR " +
+    "d.name ILIKE CONCAT('%', :nameOrDescription, '%') OR " +
+    "d.description ILIKE CONCAT('%', :nameOrDescription, '%')) " +
+    "AND (:startId IS NULL OR d.id > :startId)")
+  Page<Department> searchDepartments(@Param("nameOrDescription") String nameOrDescription,
+      @Param("startId") Long startId,
+      Pageable pageable);
 
 }
