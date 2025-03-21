@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class EmployeeServiceImpl implements EmployeeService {
   private final EmployeeHistoryService employeeHistoryService;
   private final LocalFileStorage localFileStorage;
 
+  // EmployeeServiceImpl.java
   @Override
   public CursorPageResponseEmployeeDto getEmployees(String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
@@ -58,13 +60,11 @@ public class EmployeeServiceImpl implements EmployeeService {
       String cursor, int size) {
 
     if (sortDirection == null || sortDirection.isEmpty()) {
-      sortDirection = "asc"; // 기본값 설정
+      sortDirection = "asc";
     }
     Status employeeStatus = (status != null) ? Status.from(status) : null;
     Pageable pageable = PageRequest.of(0, size, getSort(sortField, sortDirection));
-    Long idAfter = (cursor != null) ? Long.parseLong(cursor) : null;
 
-    // 날짜 변환 시 예외 처리 추가
     LocalDate start = null;
     LocalDate end = null;
     try {
@@ -74,19 +74,51 @@ public class EmployeeServiceImpl implements EmployeeService {
       throw new IllegalArgumentException("입사일 형식이 올바르지 않습니다. (예: yyyy-MM-dd)");
     }
 
-    List<Employee> employees = employeeRepository.findEmployeesWithFilters(keyword, department, position,
-        employeeNumber, start, end, idAfter, employeeStatus, pageable);
+    String sortCursor = null;
+    Long idAfter = null;
+    if (cursor != null && !cursor.isEmpty()) {
+      switch (sortField) {
+        case "name":
+        case "employeeNumber":
+        case "hireDate":
+          sortCursor = cursor;
+          break;
+        default:
+          idAfter = Long.parseLong(cursor);
+          break;
+      }
+    }
 
-    List<EmployeeDto> employeeDtos = employees.stream()
-        .map(employeeMapper::todto)
-        .toList();
+    Slice<Employee> employeeSlice = employeeRepository.findEmployeesWithFilters(
+        keyword, department, position, employeeNumber,
+        start, end, sortCursor, idAfter, sortField, sortDirection,
+        employeeStatus, pageable
+    );
 
-    String nextCursor = employees.isEmpty() ? null : String.valueOf(employees.get(employees.size() - 1).getId());
-    int totalElements = (int) getTotalEmployeeCount(status,startDate,endDate);
-    boolean hasNext = employees.size() == size;
+    Slice<EmployeeDto> dtoSlice = employeeSlice.map(employeeMapper::todto);
 
-    return employeeMapper.toPageDto(employeeDtos, nextCursor, idAfter, size, totalElements, hasNext);
+    String nextCursor = null;
+    if (!employeeSlice.getContent().isEmpty()) {
+      Employee last = employeeSlice.getContent().get(employeeSlice.getContent().size() - 1);
+      switch (sortField) {
+        case "name":
+          nextCursor = last.getName();
+          break;
+        case "hireDate":
+          nextCursor = last.getHireDate().toString();
+          break;
+        default:
+          nextCursor = String.valueOf(last.getId());
+          break;
+      }
+    }
+
+    Long nextIdAfter = dtoSlice.getContent().isEmpty() ? null : dtoSlice.getContent().get(dtoSlice.getContent().size() - 1).getId();
+    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate);
+    log.debug("Cursor Pagination -> nextCursor: {}, nextIdAfter: {}, hasNext: {}", nextCursor, nextIdAfter, employeeSlice.hasNext());
+    return employeeMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
+
 
   @Override
   @Transactional
