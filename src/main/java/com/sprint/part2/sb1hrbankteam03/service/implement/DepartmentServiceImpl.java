@@ -13,6 +13,7 @@ import com.sprint.part2.sb1hrbankteam03.service.DepartmentService;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -58,9 +60,9 @@ public class DepartmentServiceImpl implements DepartmentService {
   public DepartmentDto update(Long id,DepartmentUpdateRequest departmentUpdateRequest){
     Department department = departmentRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("department with id"  + id + "not found"));
-    if(departmentRepository.existsByName(departmentUpdateRequest.name())){
-      throw new IllegalArgumentException("이미 존재하는 부서 이름입니다: " + departmentUpdateRequest.name());
-    }
+//    if(departmentRepository.existsByName(departmentUpdateRequest.name())){
+//      throw new IllegalArgumentException("이미 존재하는 부서 이름입니다: " + departmentUpdateRequest.name());
+//    }
     department.update(departmentUpdateRequest.name(), departmentUpdateRequest.description(),
         departmentUpdateRequest.establishedDate());
     Integer count = departmentRepository.countEmployeesByDepartmentId(department.getId());
@@ -100,7 +102,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 
     // 정렬 필드
-    String validSortField = sortField.equals("name") ? "name" : "establishDate";
+    String validSortField = sortField.equals("name") ? "name" : "established_date";
 
     Long startId = null;
     if (cursor != null && !cursor.isEmpty()) {
@@ -119,11 +121,36 @@ public class DepartmentServiceImpl implements DepartmentService {
       }
     }
 
+
     Pageable pageable = PageRequest.of(0, size, Sort.by(direction, validSortField));
+    Page<Department> departments = null;
+    Department departmentt;
+    if(cursor.equals("")){
+      departments = departmentRepository.searchDepartments(nameOrDescription,startId,pageable);
+    }else{
+      departmentt = departmentRepository.findById(startId)
+          .orElseThrow(() -> new NoSuchElementException("Department with id not found"));
+      if(validSortField == "name"){
+        String startName = departmentt.getName();
+        if(direction == Direction.ASC){
+          departments= departmentRepository.searchDepartmentsByNameAsc(nameOrDescription,startName,pageable);
+        }else{
+          departments= departmentRepository.searchDepartmentsByNameDesc(nameOrDescription,startName,pageable);
+        }
+      }else{
+        String lastname = departmentt.getName();
+        LocalDate startData = departmentt.getEstablished_date();
+        if(direction == Direction.ASC){
 
-    //부서 조회
-    Page<Department> departments = departmentRepository.searchDepartments(nameOrDescription, startId, pageable);
+          departments= departmentRepository.searchDepartmentsByDateAscNativeASC(nameOrDescription,startData,lastname,pageable);
+        }else{
+          departments= departmentRepository.searchDepartmentsByDateAscNativeDesc(nameOrDescription,startData,lastname,pageable);
+        }
+      }
+    }
 
+
+    int currentPageSize = departments.getContent().size();
 
     // 다음 페이지를 위한 커서 설정 base64 인코딩, 디코딩으로
     // "{"id":" 인코딩하면 "eyJpZCI6" 나오고, "}" 디코딩하면 "fQ==" 값이 나온다.
@@ -145,7 +172,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     return departmentMapper.toCursorPageResponseDto(departmentList,
         nextCursor,
         nextIdAfter,
-        size,
+        currentPageSize,
         totalDepartments,
         departments.hasNext());
   }

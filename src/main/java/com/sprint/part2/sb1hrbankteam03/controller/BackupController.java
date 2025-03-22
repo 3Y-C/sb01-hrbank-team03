@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.controller;
 
+import com.sprint.part2.sb1hrbankteam03.common.util.IpUtils;
 import com.sprint.part2.sb1hrbankteam03.config.api.BackupApi;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BackupController implements BackupApi {
 
   private final BackupService backupService;
+  private final IpUtils ipUtils;
 
   //데이터 백업 목록 전체 조회
   @GetMapping
@@ -42,11 +44,8 @@ public class BackupController implements BackupApi {
   //데이터 백업 생성
   @PostMapping
   public ResponseEntity<BackupDto> createBackup(HttpServletRequest request) {
-    String workerIp = request.getHeader("X-Forwarded-For");
-    if (workerIp == null || workerIp.isEmpty() || "unknown".equalsIgnoreCase(workerIp)) {
-      workerIp = request.getRemoteAddr();
-    }
-    return ResponseEntity.ok(backupService.createBackup(workerIp));
+    String ipAddress = ipUtils.getClientIp(request);
+    return ResponseEntity.ok(backupService.createBackup(ipAddress));
   }
 
   //최근 백업 정보 조회
