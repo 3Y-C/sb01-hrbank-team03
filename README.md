@@ -83,7 +83,11 @@ sb1hrbankteam03
 - https://sb01-hrbank-team03.onrender.com/ 
 - https://powerful-elegance-production.up.railway.app/
 ## 프로젝트 회고
-- https://angry-mile-4b9.notion.site/1bda788b97e08060a498da599856397d?pvs=4
-- ppt
-https://www.figma.com/slides/wJR7TTpLLigGLSkipIKbzB/hrbank-3y-c?node-id=26-606&t=9hJTr6VY08hB0x00-1
-- 시연영상
+- 개발리포트 https://angry-mile-4b9.notion.site/1bda788b97e08060a498da599856397d?pvs=4 
+- ppt https://www.figma.com/slides/wJR7TTpLLigGLSkipIKbzB/hrbank-3y-c?node-id=26-606&t=9hJTr6VY08hB0x00-1
+- 시연영상 
+   -  대시보드 https://drive.google.com/file/d/19pVez-6kUBbdl2TUaAdJWi5lQuix7wC6/view?usp=drive_link
+   -  데이터 백업 https://drive.google.com/file/d/1cmDgOA-cVEazt1nskijRSxAAbVuDIAKB/view?usp=drive_link
+   - 부서 관리  https://drive.google.com/file/d/1uRWlg6Z3qLNxU4JamxdKxxbKIaX8XZIo/view?usp=drive_link
+   - 수정 이력 https://drive.google.com/file/d/1G8dl8RfI3jJtBup1OaMnq3K7F6zkLV1V/view?usp=drive_link
+   - 직원 관리 https://drive.google.com/file/d/1KphOIgxg9b2L58JJN9Y29hUJnnoeHWFJ/view?usp=drive_link
