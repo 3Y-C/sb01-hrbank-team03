@@ -98,13 +98,13 @@ public class BackupServiceImpl implements BackupService {
     backups = sortBackups(parsedBackupDto, requestBackupDto.getSortField(),
         requestBackupDto.getSortDirection());
 
-    int size = parsedBackupDto.getPageSize();
+    int requestedSize = parsedBackupDto.getPageSize();
     //다음 페이지 존재하는지 확인하기
-    boolean hasNext = backups.size() > size;
+    boolean hasNext = backups.size() > requestedSize;
 
     // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
     if (hasNext) {
-      backups = backups.subList(0, size);
+      backups = backups.subList(0, requestedSize);
     }
 
     // 결과가 없거나 다음 페이지가 없는 경우,
@@ -118,11 +118,13 @@ public class BackupServiceImpl implements BackupService {
         .map(backupMapper::toDto)
         .toList();
 
+    int actualSize = backupDtos.size();
+
     return backupMapper.toPageDto(
         backupDtos,
         nextCursor == null ? null : nextCursor.toString(),
         parsedBackupDto.getCursorId(),
-        size,
+        actualSize,
         parsedBackupDto.getTotalElements(),
         hasNext);
   }
