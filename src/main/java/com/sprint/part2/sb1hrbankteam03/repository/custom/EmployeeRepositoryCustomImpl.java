@@ -34,8 +34,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
   private static final Map<String, String> SORT_FIELD_MAP = Map.of(
       "name", "name",
       "employeeNumber", "employeeNumber",
-      "hireDate", "hireDate",
-      "id", "id"
+      "hireDate", "hireDate"
   );
 
   @Override
@@ -85,6 +84,7 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
         .leftJoin(e.department, d).fetchJoin()
         .where(whereClause)
         .orderBy(getOrderSpecifiers(pageable, e))
+        .limit(pageSize)
         .fetch();
 
     boolean hasNext = content.size() > pageable.getPageSize();

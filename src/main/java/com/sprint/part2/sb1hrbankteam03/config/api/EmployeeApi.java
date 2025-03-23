@@ -27,17 +27,28 @@ public interface EmployeeApi {
       })
   @GetMapping
   ResponseEntity<CursorPageResponseEmployeeDto> getEmployees(
-      @Parameter(description = "이름 또는 이메일 (부분 일치)") @RequestParam(required = false) String keyword,
-      @Parameter(description = "부서명 (부분 일치)") @RequestParam(required = false) String department,
-      @Parameter(description = "직책 (부분 일치)") @RequestParam(required = false) String position,
-      @Parameter(description = "사원번호 (부분 일치)") @RequestParam(required = false) String employeeNumber,
-      @Parameter(description = "입사일 시작") @RequestParam(required = false) String startDate,
-      @Parameter(description = "입사일 종료") @RequestParam(required = false) String endDate,
-      @Parameter(description = "상태 (예: ACTIVE)") @RequestParam(required = false) String status,
-      @Parameter(description = "정렬 필드") @RequestParam(required = false) String sortField,
-      @Parameter(description = "정렬 방향 (asc 또는 desc)") @RequestParam(required = false) String sortDirection,
-      @Parameter(description = "커서") @RequestParam(required = false) String cursor,
-      @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size
+      @Parameter(description = "이름 또는 이메일 (부분 일치)")
+      @RequestParam(name = "nameOrEmail", required = false) String keyword,
+      @Parameter(description = "부서명 (부분 일치)")
+      @RequestParam(name = "departmentName", required = false) String department,
+      @Parameter(description = "직책 (부분 일치)")
+      @RequestParam(required = false) String position,
+      @Parameter(description = "사원번호 (부분 일치)")
+      @RequestParam(required = false) String employeeNumber,
+      @Parameter(description = "입사일 시작")
+      @RequestParam(name = "hireDateFrom", required = false) String startDate,
+      @Parameter(description = "입사일 종료")
+      @RequestParam(name = "hireDateTo", required = false) String endDate,
+      @Parameter(description = "상태 (예: ACTIVE)")
+      @RequestParam(required = false) String status,
+      @Parameter(description = "정렬 필드")
+      @RequestParam(required = false) String sortField,
+      @Parameter(description = "정렬 방향 (asc 또는 desc)")
+      @RequestParam(required = false) String sortDirection,
+      @Parameter(description = "커서")
+      @RequestParam(required = false) String cursor,
+      @Parameter(description = "페이지 크기")
+      @RequestParam(defaultValue = "10") int size
   );
 
   @Operation(summary = "직원 등록", description = "신규 직원을 등록합니다. 프로필 이미지 업로드 가능",

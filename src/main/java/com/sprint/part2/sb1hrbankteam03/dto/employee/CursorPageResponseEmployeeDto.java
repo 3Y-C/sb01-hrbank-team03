@@ -17,5 +17,5 @@ public class CursorPageResponseEmployeeDto {
   private Long nextIdAfter;
   private int size;
   private int totalElements;
-  private boolean hasNest;
+  private boolean hasNext;
 }

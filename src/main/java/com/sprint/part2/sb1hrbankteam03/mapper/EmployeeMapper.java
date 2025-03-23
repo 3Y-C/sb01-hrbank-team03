@@ -61,7 +61,7 @@ public class EmployeeMapper {
         slice.getContent(),
         nextCursor,
         nextIdAfter,
-        slice.getSize(),
+        slice.getContent().size(),
         totalElements,
         slice.hasNext()
     );
