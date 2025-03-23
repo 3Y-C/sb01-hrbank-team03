@@ -134,7 +134,7 @@ public class EmployeeServiceImpl implements EmployeeService {
       }
     }
 
-    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate) + 1;
+    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate);
     return employeeMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
 
@@ -282,8 +282,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
   @Override
   public long getTotalEmployeeCount(String status, String fromDate, String toDate) {
+    if ((status == null || status.isEmpty()) && (fromDate == null || fromDate.isEmpty()) && (toDate == null || toDate.isEmpty())) {
+      return employeeRepository.count(); // 전체
+    }
     Status employeeStatus = (status != null) ? Status.from(status) : null;
-
     LocalDate now = LocalDate.now();
     LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : LocalDate.of(1900,1,1);
     LocalDate end = (toDate != null) ? LocalDate.parse(toDate) : now;
