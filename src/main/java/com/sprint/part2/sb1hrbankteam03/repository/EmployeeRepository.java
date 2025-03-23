@@ -31,19 +31,24 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>,
   List<Object[]> getEmployeeTrend(@Param("startDate") LocalDate start,
       @Param("endDate") LocalDate end, @Param("format") String timeUnit);
 
-  @Query("SELECT " +
-      "  CASE " +
-      "      WHEN FUNCTION('LOWER', :criteria) = 'department' THEN COALESCE(d.name, 'Unknown') " +
-      "      ELSE COALESCE(e.position, 'Unknown') " +
-      "  END AS groupKey, " +
-      "  COUNT(e) AS count " +
-      "FROM Employee e " +
-      "LEFT JOIN e.department d " +
-      "WHERE e.status = :status " +
-      "GROUP BY d.name, e.position " +
-      "ORDER BY COUNT(e) DESC")
-  List<Object[]> getEmployeeDistribution(@Param("criteria") String criteria,
-      @Param("status") Status status);
+  @Query("""
+  SELECT COALESCE(e.position, 'Unknown'), COUNT(e)
+  FROM Employee e
+  WHERE e.status = :status
+  GROUP BY e.position
+  ORDER BY COUNT(e) DESC
+""")
+  List<Object[]> getEmployeeDistributionByPosition(@Param("status") Status status);
+
+  @Query("""
+  SELECT COALESCE(d.name, 'Unknown'), COUNT(e)
+  FROM Employee e
+  LEFT JOIN e.department d
+  WHERE e.status = :status
+  GROUP BY d.name
+  ORDER BY COUNT(e) DESC
+""")
+  List<Object[]> getEmployeeDistributionByDepartment(@Param("status") Status status);
 
 
   //전체 직원 조회

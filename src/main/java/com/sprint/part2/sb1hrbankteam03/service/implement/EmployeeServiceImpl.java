@@ -1,5 +1,6 @@
 package com.sprint.part2.sb1hrbankteam03.service.implement;
 
+import static com.sprint.part2.sb1hrbankteam03.entity.QDepartment.department;
 import static com.sprint.part2.sb1hrbankteam03.entity.enums.Status.ACTIVE;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
@@ -134,7 +135,7 @@ public class EmployeeServiceImpl implements EmployeeService {
       }
     }
 
-    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate);
+    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate,department,position);
     return employeeMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
 
@@ -261,48 +262,64 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
 
-  @Override
   public List<EmployeeDistributionDto> getEmployeeDistribution(String groupBy, String status) {
-    String criteria =(groupBy != null)? groupBy.toLowerCase():"department";
-    Status employeeStatus=(status !=null)? Status.from(status):ACTIVE;
-    List<Object[]> data = employeeRepository.getEmployeeDistribution(criteria, employeeStatus);
+    String criteria = (groupBy != null) ? groupBy.toLowerCase() : "department";
+    Status employeeStatus = (status != null) ? Status.from(status) : Status.ACTIVE;
 
-    long totalCount=employeeRepository.countByStatus(employeeStatus);
-    List<EmployeeDistributionDto> distribution = data.stream()
+    List<Object[]> data;
+
+    if ("position".equals(criteria)) {
+      data = employeeRepository.getEmployeeDistributionByPosition(employeeStatus);
+    } else {
+      data = employeeRepository.getEmployeeDistributionByDepartment(employeeStatus);
+    }
+
+    long totalCount = employeeRepository.countByStatus(employeeStatus);
+
+    return data.stream()
         .map(objects -> {
           String groupKey = (String) objects[0];
           int count = ((Number) objects[1]).intValue();
           double percentage = (totalCount > 0) ? (count * 100.0 / totalCount) : 0.0;
-
           return new EmployeeDistributionDto(groupKey, count, percentage);
         })
         .toList();
-    return distribution;
   }
 
+
   @Override
-  public long getTotalEmployeeCount(String status, String fromDate, String toDate) {
-    if ((status == null || status.isEmpty()) && (fromDate == null || fromDate.isEmpty()) && (toDate == null || toDate.isEmpty())) {
-      return employeeRepository.count(); // 전체
-    }
+  public long getTotalEmployeeCount(String status, String fromDate, String toDate, String department, String position) {
+//    if ((status == null || status.isEmpty()) && (fromDate == null || fromDate.isEmpty()) && (toDate == null || toDate.isEmpty())) {
+//      return employeeRepository.count(); // 전체
+//    }
     Status employeeStatus = (status != null) ? Status.from(status) : null;
     LocalDate now = LocalDate.now();
     LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : LocalDate.of(1900,1,1);
     LocalDate end = (toDate != null) ? LocalDate.parse(toDate) : now;
+      boolean isAllEmpty =
+          employeeStatus == null &&
+              (department == null || department.isEmpty()) &&
+              (position == null || position.isEmpty()) &&
+              (fromDate == null || fromDate.isEmpty()) &&
+              (toDate == null || toDate.isEmpty());
 
-    if (start != null && end != null) {
-      return (employeeStatus != null)
-          ? employeeRepository.countByStatusAndHireDateBetween(employeeStatus, start, end)
-          : employeeRepository.countByHireDateBetween(start, end);
-    } else if (start != null) {
-      return (employeeStatus != null)
-          ? employeeRepository.countByStatusAndHireDateAfter(employeeStatus, start)
-          : employeeRepository.countByHireDateAfter(start);
-    } else {
-      return (employeeStatus != null)
-          ? employeeRepository.countByStatus(employeeStatus)
-          : employeeRepository.count();
-    }
+      if (isAllEmpty) {
+        return employeeRepository.count(); // 조건이 모두 없으면 전체 카운트
+      }
+//    if (start != null && end != null) {
+//      return (employeeStatus != null)
+//          ? employeeRepository.countByStatusAndHireDateBetween(employeeStatus, start, end)
+//          : employeeRepository.countByHireDateBetween(start, end);
+//    } else if (start != null) {
+//      return (employeeStatus != null)
+//          ? employeeRepository.countByStatusAndHireDateAfter(employeeStatus, start)
+//          : employeeRepository.countByHireDateAfter(start);
+//    } else {
+//      return (employeeStatus != null)
+//          ? employeeRepository.countByStatus(employeeStatus)
+//          : employeeRepository.count();
+//    }
+    return employeeRepository.countByFilters(department, position, employeeStatus, start, end);
   }
 
   private void validateEmailUnique(String email) {
