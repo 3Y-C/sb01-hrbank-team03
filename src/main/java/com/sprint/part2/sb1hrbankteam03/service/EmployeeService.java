@@ -19,5 +19,5 @@ public interface EmployeeService {
   void deleteEmployee(Long employeeId, String ipAddress);
   List<EmployeeTrendDto> getAllEmployTrend(String startDate, String endDate, String unit);
   List<EmployeeDistributionDto> getEmployeeDistribution(String groupBy, String status);
-  long getTotalEmployeeCount(String status, String fromDate, String toDate);
+  long getTotalEmployeeCount(String status, String fromDate, String toDate, String department, String position);
 }

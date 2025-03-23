@@ -142,7 +142,16 @@ public interface EmployeeApi {
       @RequestParam(required = false, defaultValue = "ACTIVE") String status
   );
 
-  @Operation(summary = "사원 수 조회", description = "조건에 맞는 사원 수를 조회합니다.",
+  @Operation(
+      summary = "사원 수 조회",
+      description = "상태, 입사일, 부서, 직책 조건에 맞는 사원 수를 조회합니다.",
+      parameters = {
+          @Parameter(name = "status", description = "사원 상태 (예: ACTIVE, INACTIVE)", example = "ACTIVE"),
+          @Parameter(name = "fromDate", description = "입사 시작일 (yyyy-MM-dd)", example = "2024-01-01"),
+          @Parameter(name = "toDate", description = "입사 종료일 (yyyy-MM-dd)", example = "2025-01-01"),
+          @Parameter(name = "department", description = "부서명 (예: 프론트, 백엔드)", example = "프론트"),
+          @Parameter(name = "position", description = "직책 (예: 대리, 과장)", example = "대리")
+      },
       responses = {
           @ApiResponse(responseCode = "200", description = "사원 수 조회 성공",
               content = @Content(schema = @Schema(implementation = Long.class))),
@@ -150,11 +159,15 @@ public interface EmployeeApi {
               content = @Content(schema = @Schema(implementation = com.sprint.part2.sb1hrbankteam03.dto.ErrorResponse.class))),
           @ApiResponse(responseCode = "500", description = "서버 오류",
               content = @Content(schema = @Schema(implementation = com.sprint.part2.sb1hrbankteam03.dto.ErrorResponse.class)))
-      })
+      }
+  )
   @GetMapping("/count")
   ResponseEntity<Long> getEmployeeCount(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String fromDate,
-      @RequestParam(required = false) String toDate
+      @RequestParam(required = false) String toDate,
+      @RequestParam(required = false) String department,
+      @RequestParam(required = false) String position
   );
+
 }
