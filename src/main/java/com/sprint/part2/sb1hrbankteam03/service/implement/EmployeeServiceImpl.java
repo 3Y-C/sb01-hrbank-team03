@@ -53,7 +53,8 @@ public class EmployeeServiceImpl implements EmployeeService {
   private final LocalFileStorage localFileStorage;
 
   @Override
-  public CursorPageResponseEmployeeDto getEmployees(String keyword, String department, String position,
+  public CursorPageResponseEmployeeDto getEmployees(
+      String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
       String status, String sortField, String sortDirection,
       String cursor, int size) {
@@ -61,7 +62,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     if (sortDirection == null || sortDirection.isEmpty()) {
       sortDirection = "asc";
     }
-   // Status employeeStatus = (status != null) ? Status.from(status) : null;
+
     Status employeeStatus = (status != null && !status.isEmpty()) ? Status.from(status) : null;
     Pageable pageable = PageRequest.of(0, size, getSort(sortField, sortDirection));
 
@@ -76,43 +77,33 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     String sortCursor = null;
     Long idAfter = null;
+
     if (cursor != null && !cursor.isEmpty()) {
       switch (sortField) {
         case "name":
-          // 프론트가 숫자를 보내는 경우에도 이름으로 바꿔줌
-          if (cursor.matches("\\d+")) {
-            Long id = Long.parseLong(cursor);
-            Employee emp = employeeRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 직원이 존재하지 않습니다."));
-            sortCursor = emp.getName(); // 이름으로 커서 변경
-            idAfter = id;
-          } else {
-            sortCursor = cursor;
-          }
-          break;
-
         case "hireDate":
+        case "employeeNumber":
           if (cursor.matches("\\d+")) {
             Long id = Long.parseLong(cursor);
             Employee emp = employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 직원이 존재하지 않습니다."));
-            sortCursor = emp.getHireDate().toString(); // 날짜로 커서 변경
+            if ("name".equals(sortField)) {
+              sortCursor = emp.getName();
+            } else if ("hireDate".equals(sortField)) {
+              sortCursor = emp.getHireDate().toString();
+            } else if ("employeeNumber".equals(sortField)) {
+              sortCursor = emp.getEmployeeNumber();
+            }
             idAfter = id;
           } else {
             sortCursor = cursor;
           }
           break;
-
-        case "employeeNumber":
-          sortCursor = cursor;
-          break;
-
         default:
-          idAfter = Long.parseLong(cursor); // ID 기반 정렬
+          idAfter = Long.parseLong(cursor);
           break;
       }
     }
-
 
     Slice<Employee> employeeSlice = employeeRepository.findEmployeesWithFilters(
         keyword, department, position, employeeNumber,
@@ -121,10 +112,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     );
 
     Slice<EmployeeDto> dtoSlice = employeeSlice.map(employeeMapper::todto);
-    log.debug("응답 DTO content.size = {}", dtoSlice.getContent().size());
+
     String nextCursor = null;
+    Long nextIdAfter = null;
     if (!employeeSlice.getContent().isEmpty()) {
       Employee last = employeeSlice.getContent().get(employeeSlice.getContent().size() - 1);
+      nextIdAfter = last.getId();
       switch (sortField) {
         case "name":
           nextCursor = last.getName();
@@ -132,17 +125,19 @@ public class EmployeeServiceImpl implements EmployeeService {
         case "hireDate":
           nextCursor = last.getHireDate().toString();
           break;
+        case "employeeNumber":
+          nextCursor = last.getEmployeeNumber();
+          break;
         default:
           nextCursor = String.valueOf(last.getId());
           break;
       }
     }
 
-    Long nextIdAfter = dtoSlice.getContent().isEmpty() ? null : dtoSlice.getContent().get(dtoSlice.getContent().size() - 1).getId();
-    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate)+1;
-
+    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate);
     return employeeMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
+
 
 
   @Override
@@ -287,8 +282,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
   @Override
   public long getTotalEmployeeCount(String status, String fromDate, String toDate) {
+    if ((status == null || status.isEmpty()) && (fromDate == null || fromDate.isEmpty()) && (toDate == null || toDate.isEmpty())) {
+      return employeeRepository.count(); // 전체
+    }
     Status employeeStatus = (status != null) ? Status.from(status) : null;
-
     LocalDate now = LocalDate.now();
     LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : LocalDate.of(1900,1,1);
     LocalDate end = (toDate != null) ? LocalDate.parse(toDate) : now;
