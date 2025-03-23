@@ -58,9 +58,12 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
-      "AND (:cursorId IS NULL OR (b.endAt > :cursorStartAt) " +
-      "OR (b.endAt = :cursorStartAt AND b.id > :cursorId)) " +
-      "ORDER BY b.endAt ASC, b.id ASC ")
+      "AND (:cursorId IS NULL OR " +
+      "   (b.endAt IS NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NULL) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NOT NULL AND b.endAt > :cursorStartAt) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NOT NULL AND b.endAt = :cursorStartAt AND b.id > :cursorId)) " +
+      "ORDER BY CASE WHEN b.endAt IS NULL THEN 1 ELSE 0 END, b.endAt ASC, b.id ASC ")
   List<Backup> findByConditionsOrderByEndAtAsc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
