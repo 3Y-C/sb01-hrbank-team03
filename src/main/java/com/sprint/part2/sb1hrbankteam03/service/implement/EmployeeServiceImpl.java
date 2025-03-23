@@ -61,7 +61,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     if (sortDirection == null || sortDirection.isEmpty()) {
       sortDirection = "asc";
     }
-    Status employeeStatus = (status != null) ? Status.from(status) : null;
+   // Status employeeStatus = (status != null) ? Status.from(status) : null;
+    Status employeeStatus = (status != null && !status.isEmpty()) ? Status.from(status) : null;
     Pageable pageable = PageRequest.of(0, size, getSort(sortField, sortDirection));
 
     LocalDate start = null;
@@ -138,7 +139,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     Long nextIdAfter = dtoSlice.getContent().isEmpty() ? null : dtoSlice.getContent().get(dtoSlice.getContent().size() - 1).getId();
-    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate);
+    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate)+1;
 
     return employeeMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
