@@ -82,8 +82,8 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
       "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
       "(CAST(:lastFieldValue AS date) IS NULL OR " +
-      "((d.id != CAST(:lastFieldId AS Long) AND d.established_date < CAST(:lastFieldValue AS date)) OR " +
-      "(d.id = CAST(:lastFieldId AS Long) AND d.established_date <= CAST(:lastFieldValue AS date)))) " +
+      "((d.name != CAST(:name AS String) AND d.established_date <= CAST(:lastFieldValue AS date)) OR " +
+      "(d.name = CAST(:name AS String) AND d.established_date < CAST(:lastFieldValue AS date)))) " +
       "ORDER BY d.established_date DESC")
   Page<Department> searchDepartmentsByDateAscNativeDesc(
       @Param("nameOrDescription") String nameOrDescription,
