@@ -1,6 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.repository.custom;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -10,6 +11,7 @@ import com.sprint.part2.sb1hrbankteam03.entity.QEmployee;
 import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -135,16 +137,30 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
   }
 
   // 정렬 조건
+  // 정렬 조건
   private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QEmployee e) {
-    return pageable.getSort().stream()
+    List<OrderSpecifier<?>> specifiers = pageable.getSort().stream()
         .map(order -> {
           String fieldName = SORT_FIELD_MAP.getOrDefault(order.getProperty(), order.getProperty());
           PathBuilder<Employee> path = new PathBuilder<>(Employee.class, "employee");
 
           return order.isAscending()
-              ? new OrderSpecifier<>(com.querydsl.core.types.Order.ASC, path.get(fieldName, Comparable.class))
-              : new OrderSpecifier<>(com.querydsl.core.types.Order.DESC, path.get(fieldName, Comparable.class));
-        })
-        .toArray(OrderSpecifier[]::new);
+              ? new OrderSpecifier<>(Order.ASC, path.get(fieldName, Comparable.class))
+              : new OrderSpecifier<>(Order.DESC, path.get(fieldName, Comparable.class));
+        }).collect(Collectors.toList());
+
+    // 항상 id 정렬 추가 (tie-breaker)
+    boolean isIdSorted  = pageable.getSort().stream()
+        .anyMatch(order -> "id".equals(order.getProperty()));
+    if (!isIdSorted) {
+      boolean isDesc = pageable.getSort().stream()
+          .findFirst()
+          .map(order -> !order.isAscending())
+          .orElse(false);
+
+      specifiers.add(isDesc ? new OrderSpecifier<>(Order.DESC, e.id) : new OrderSpecifier<>(Order.ASC, e.id));
+    }
+    return specifiers.toArray(new OrderSpecifier[0]);
   }
+
 }
