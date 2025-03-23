@@ -122,9 +122,11 @@ public class EmployeeController implements EmployeeApi {
   public ResponseEntity<Long> getEmployeeCount(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String fromDate,
-      @RequestParam(required = false) String toDate
+      @RequestParam(required = false) String toDate,
+      @RequestParam(required = false) String department,
+      @RequestParam(required = false) String position
   ) {
-    long count=employeeService.getTotalEmployeeCount(status,fromDate,toDate);
+    long count = employeeService.getTotalEmployeeCount(status, fromDate, toDate, department, position);
     return ResponseEntity.ok(count);
   }
 

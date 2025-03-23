@@ -97,6 +97,41 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
     return new SliceImpl<>(content, pageable, hasNext);
   }
 
+  @Override
+  public long countByFilters(String department, String position, Status status, LocalDate start, LocalDate end) {
+    QEmployee e = QEmployee.employee;
+    QDepartment d = QDepartment.department;
+
+    BooleanBuilder builder = new BooleanBuilder();
+
+    if (department != null && !department.isEmpty()) {
+      builder.and(d.name.containsIgnoreCase(department));
+    }
+
+    if (position != null && !position.isEmpty()) {
+      builder.and(e.position.containsIgnoreCase(position));
+    }
+
+    if (status != null) {
+      builder.and(e.status.eq(status));
+    }
+
+    if (start != null) {
+      builder.and(e.hireDate.goe(start));
+    }
+
+    if (end != null) {
+      builder.and(e.hireDate.loe(end));
+    }
+
+    return queryFactory
+        .select(e.count())
+        .from(e)
+        .leftJoin(e.department, d)
+        .where(builder)
+        .fetchOne();
+  }
+
   // 커서 조건 빌더
   private BooleanBuilder buildCursorCondition(QEmployee e, String cursor, Long idAfter, String sortField, String sortDirection) {
     BooleanBuilder builder = new BooleanBuilder();

@@ -14,4 +14,6 @@ public interface EmployeeRepositoryCustom {
       String cursor, Long idAfter, String sortField, String sortDirection,
       Status status, Pageable pageable
   );
+
+  long countByFilters(String department, String position, Status status, LocalDate start, LocalDate end);
 }
