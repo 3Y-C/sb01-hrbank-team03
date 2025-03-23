@@ -117,6 +117,12 @@ public class EmployeeRepositoryCustomImpl implements EmployeeRepositoryCustom {
         } else {
           builder.and(e.hireDate.gt(hireCursor).or(e.hireDate.eq(hireCursor).and(e.id.gt(idAfter))));
         }
+
+        break;
+      case "employeeNumber":
+        builder.and(isDesc
+            ? e.employeeNumber.lt(cursor).or(e.employeeNumber.eq(cursor).and(e.id.lt(idAfter)))
+            : e.employeeNumber.gt(cursor).or(e.employeeNumber.eq(cursor).and(e.id.gt(idAfter))));
         break;
       default:
         if (idAfter != null) {
