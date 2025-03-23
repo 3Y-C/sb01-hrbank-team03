@@ -98,13 +98,13 @@ public class BackupServiceImpl implements BackupService {
     backups = sortBackups(parsedBackupDto, requestBackupDto.getSortField(),
         requestBackupDto.getSortDirection());
 
-    int size = parsedBackupDto.getPageSize();
+    int requestedSize = parsedBackupDto.getPageSize();
     //다음 페이지 존재하는지 확인하기
-    boolean hasNext = backups.size() > size;
+    boolean hasNext = backups.size() > requestedSize;
 
     // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
     if (hasNext) {
-      backups = backups.subList(0, size);
+      backups = backups.subList(0, requestedSize);
     }
 
     // 결과가 없거나 다음 페이지가 없는 경우,
@@ -118,11 +118,13 @@ public class BackupServiceImpl implements BackupService {
         .map(backupMapper::toDto)
         .toList();
 
+    int actualSize = backupDtos.size();
+
     return backupMapper.toPageDto(
         backupDtos,
         nextCursor == null ? null : nextCursor.toString(),
         parsedBackupDto.getCursorId(),
-        size,
+        actualSize,
         parsedBackupDto.getTotalElements(),
         hasNext);
   }
@@ -298,6 +300,7 @@ public class BackupServiceImpl implements BackupService {
     Long cursorId = null;
     LocalDateTime cursorStartAt = null;
 
+    //여기 수정
     if (requestBackupDto.getCursor() != null) {
       try {
         cursorId = Long.parseLong(requestBackupDto.getCursor());
@@ -308,15 +311,29 @@ public class BackupServiceImpl implements BackupService {
           cursorStartAt = cursorBackup.get().getStartAt();
         } else {
           // 해당 ID가 없을 경우 기본값 설정 (내림차순이므로 최대값으로 설정해야한다.)
-          cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+          if(requestBackupDto.getSortDirection().equalsIgnoreCase("desc")) {
+            cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+          }else{
+            cursorStartAt = LocalDateTime.of(1970, 01, 01, 00, 00, 00);
+          }
         }
       } catch (NumberFormatException e) {
         cursorId = null;
-        cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        if(requestBackupDto.getSortDirection().equalsIgnoreCase("desc")) {
+          cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        }
+        else {
+          cursorStartAt = LocalDateTime.of(1970, 01, 01, 00, 00, 00);
+        }
       }
     } else {
       // 첫 페이지 요청 시 최대값으로 설정 (내림차순이므로!)
-      cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+      if(requestBackupDto.getSortDirection().equalsIgnoreCase("desc")) {
+        cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+      }
+      else{
+        cursorStartAt = LocalDateTime.of(1970, 01, 01, 00, 00, 00);
+      }
     }
 
     //조회 결과 총 개수
