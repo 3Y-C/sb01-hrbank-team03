@@ -276,27 +276,19 @@ public class BackupServiceImpl implements BackupService {
 
     String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
     BackupStatus backupStatus = null;
-    if (requestBackupDto.getStatus() == null || requestBackupDto.getStatus().isEmpty()) {
-
+    if (requestBackupDto.getStatus() != null && !requestBackupDto.getStatus().isEmpty()) {
+      backupStatus = BackupStatus.valueOf(requestBackupDto.getStatus());
     }
 
     //startedAtFrom 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최소값으로 설정
-    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);;
     if (requestBackupDto.getStartedAtFrom() != null) {
-      try {
-        startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
-      } catch (Exception e) {
-        startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
-      }
+      startedAtFrom = LocalDateTime.ofInstant(Instant.parse(requestBackupDto.getStartedAtFrom()), ZoneId.of("Asia/Seoul"));
     }
     //startedAtTo 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최대값으로 설정
     LocalDateTime startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-    if (requestBackupDto.getStartedAtTo() != null) {
-      try {
-        startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
-      } catch (Exception e) {
-        startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-      }
+    if (requestBackupDto.getStartedAtTo() != null ) {
+      startedAtTo = LocalDateTime.ofInstant(Instant.parse(requestBackupDto.getStartedAtTo()),ZoneId.of("Asia/Seoul"));
     }
 
     int size = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
