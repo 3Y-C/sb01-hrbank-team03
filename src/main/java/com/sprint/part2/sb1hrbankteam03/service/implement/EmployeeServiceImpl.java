@@ -261,24 +261,30 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
 
-  @Override
   public List<EmployeeDistributionDto> getEmployeeDistribution(String groupBy, String status) {
-    String criteria =(groupBy != null)? groupBy.toLowerCase():"department";
-    Status employeeStatus=(status !=null)? Status.from(status):ACTIVE;
-    List<Object[]> data = employeeRepository.getEmployeeDistribution(criteria, employeeStatus);
+    String criteria = (groupBy != null) ? groupBy.toLowerCase() : "department";
+    Status employeeStatus = (status != null) ? Status.from(status) : Status.ACTIVE;
 
-    long totalCount=employeeRepository.countByStatus(employeeStatus);
-    List<EmployeeDistributionDto> distribution = data.stream()
+    List<Object[]> data;
+
+    if ("position".equals(criteria)) {
+      data = employeeRepository.getEmployeeDistributionByPosition(employeeStatus);
+    } else {
+      data = employeeRepository.getEmployeeDistributionByDepartment(employeeStatus);
+    }
+
+    long totalCount = employeeRepository.countByStatus(employeeStatus);
+
+    return data.stream()
         .map(objects -> {
           String groupKey = (String) objects[0];
           int count = ((Number) objects[1]).intValue();
           double percentage = (totalCount > 0) ? (count * 100.0 / totalCount) : 0.0;
-
           return new EmployeeDistributionDto(groupKey, count, percentage);
         })
         .toList();
-    return distribution;
   }
+
 
   @Override
   public long getTotalEmployeeCount(String status, String fromDate, String toDate) {
