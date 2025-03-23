@@ -98,28 +98,43 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
       Instant atFrom, Instant atTo, String cursor, Long idAfter, String sortField,
       String sortDirection, Pageable pageable) {
 
-    // 쿼리 실행
+    // 데이터 조회
     Slice<EmployeeHistory> slice = employeeHistoryRepository.findAllWithFilters(
         employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, idAfter, pageable, sortField, sortDirection
     );
 
-    // DTO 변환
-    Slice<ChangeLogDto> dtoSlice = slice.map(employeeHistoryMapper::toDto);
+    List<EmployeeHistory> contentList = slice.getContent();
+    boolean hasNext = slice.hasNext();
 
-    // 커서 계산 (정렬 필드에 따라 동적 처리)
     String nextCursor = null;
-    if (!slice.getContent().isEmpty()) {
-      EmployeeHistory last = slice.getContent().get(slice.getContent().size() - 1);
+    Long nextIdAfter = null;
+
+    if (hasNext && !contentList.isEmpty()) {
+      EmployeeHistory last = contentList.get(contentList.size() - 1);
       if ("ipAddress".equals(sortField)) {
         nextCursor = last.getIpAddress();
       } else {
         nextCursor = last.getAt().toString();  // 기본: at
       }
+      nextIdAfter = last.getId();
     }
 
+    int actualSize = contentList.size();
     Long totalElements = employeeHistoryRepository.countByFilters(employeeNumber, memo, ipAddress, changeType, atFrom, atTo);
 
-    return employeeHistoryMapper.fromSlice(dtoSlice, nextCursor, totalElements);
+    // DTO 변환
+    List<ChangeLogDto> dtoList = contentList.stream()
+        .map(employeeHistoryMapper::toDto)
+        .toList();
+
+    return new CursorPageResponseChangeLogDto(
+        dtoList,
+        nextCursor,
+        nextIdAfter,
+        actualSize,
+        totalElements,
+        hasNext
+    );
   }
 
   @Override

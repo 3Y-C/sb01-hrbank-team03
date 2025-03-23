@@ -60,9 +60,11 @@ public class DepartmentServiceImpl implements DepartmentService {
   public DepartmentDto update(Long id,DepartmentUpdateRequest departmentUpdateRequest){
     Department department = departmentRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("department with id"  + id + "not found"));
-//    if(departmentRepository.existsByName(departmentUpdateRequest.name())){
-//      throw new IllegalArgumentException("이미 존재하는 부서 이름입니다: " + departmentUpdateRequest.name());
-//    }
+    if(!department.getName().equals(departmentUpdateRequest.name())){
+      if(departmentRepository.existsByName(departmentUpdateRequest.name())){
+        throw new IllegalArgumentException("이미 존재하는 부서 이름입니다: " + departmentUpdateRequest.name());
+      }
+    }
     department.update(departmentUpdateRequest.name(), departmentUpdateRequest.description(),
         departmentUpdateRequest.establishedDate());
     Integer count = departmentRepository.countEmployeesByDepartmentId(department.getId());
