@@ -10,10 +10,10 @@ https://angry-mile-4b9.notion.site/Team-3-19aa788b97e0802b91d9c7cf63aafb61?pvs=4
 | 창우 | 직원 정보 관리 구현 |
 ### 🔗 개인 Github 링크
 
-- 유진: [github.com/yujin-dev](https://github.com/yujin-dev)
-- 용구: [github.com/yonggu-dev](https://github.com/yonggu-dev)
-- 유일: [github.com/youil-dev](https://github.com/youil-dev)
-- 창우: [github.com/changwoo-dev](https://github.com/changwoo-dev)
+- 유진: https://github.com/yudility
+- 용구: https://github.com/reflash407
+- 유일: https://github.com/you1-2
+- 창우: https://github.com/qwertyuiop4m
 ## 프로젝트 소개
 - **프로젝트 명:** HR Bank
 - **설명:** 기업의 인사 관리를 위한 Spring 기반 백엔드 시스템 개발
