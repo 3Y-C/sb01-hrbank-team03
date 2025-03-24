@@ -67,13 +67,13 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
       "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
       "((CAST(:lastFieldValue AS date) IS NULL) OR " +
-      "((d.name = CAST(:name AS String) AND d.established_date > CAST(:lastFieldValue AS date)) OR " +
-      "(d.name != CAST(:name AS String) AND d.established_date >= CAST(:lastFieldValue AS date)))) " +
-      "ORDER BY d.established_date ASC")
+      "((d.established_date = CAST(:lastFieldValue AS date) AND d.id > CAST(:lastId AS Long)) OR " +
+      "(d.established_date != CAST(:lastFieldValue AS date) AND d.established_date > CAST(:lastFieldValue AS date)))) " +
+      "ORDER BY d.established_date ASC, d.id ASC")
   Page<Department> searchDepartmentsByDateAscNativeASC(
       @Param("nameOrDescription") String nameOrDescription,
       @Param("lastFieldValue") LocalDate lastFieldValue,
-      @Param("name") String name,
+      @Param("lastId") Long id,
       Pageable pageable);
 
 
@@ -82,14 +82,16 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
       "d.name LIKE CONCAT('%', :nameOrDescription, '%') OR " +
       "d.description LIKE CONCAT('%', :nameOrDescription, '%')) AND " +
       "(CAST(:lastFieldValue AS date) IS NULL OR " +
-      "((d.name != CAST(:name AS String) AND d.established_date <= CAST(:lastFieldValue AS date)) OR " +
-      "(d.name = CAST(:name AS String) AND d.established_date < CAST(:lastFieldValue AS date)))) " +
-      "ORDER BY d.established_date DESC")
+      "(d.established_date = CAST(:lastFieldValue AS date)) AND d.id < CAST(:lastid AS Long)) OR " +
+      "(d.established_date != CAST(:lastFieldValue AS date)) AND d.established_date < CAST(:lastFieldValue AS date) " +
+      "ORDER BY d.established_date DESC, d.id DESC")
   Page<Department> searchDepartmentsByDateAscNativeDesc(
       @Param("nameOrDescription") String nameOrDescription,
       @Param("lastFieldValue") LocalDate lastFieldValue,
-      @Param("name") String name,
+      @Param("lastid") Long lastid,
       Pageable pageable);
+
+
 
 
 //맨 처음 요청

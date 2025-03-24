@@ -106,6 +106,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     // 정렬 필드
     String validSortField = sortField.equals("name") ? "name" : "established_date";
 
+    // 여러 정렬 조건을 조합
+    Sort sort = Sort.by(new Sort.Order(direction, validSortField), new Sort.Order(direction, "id"));
     Long startId = null;
     if (cursor != null && !cursor.isEmpty()) {
       try {
@@ -124,7 +126,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
 
-    Pageable pageable = PageRequest.of(0, size, Sort.by(direction, validSortField));
+    Pageable pageable = PageRequest.of(0, size, sort);
     Page<Department> departments = null;
     Department departmentt;
     if(cursor.equals("")){
@@ -134,19 +136,20 @@ public class DepartmentServiceImpl implements DepartmentService {
           .orElseThrow(() -> new NoSuchElementException("Department with id not found"));
       if(validSortField == "name"){
         String startName = departmentt.getName();
+        Long id = departmentt.getId();
         if(direction == Direction.ASC){
           departments= departmentRepository.searchDepartmentsByNameAsc(nameOrDescription,startName,pageable);
         }else{
           departments= departmentRepository.searchDepartmentsByNameDesc(nameOrDescription,startName,pageable);
         }
       }else{
-        String lastname = departmentt.getName();
         LocalDate startData = departmentt.getEstablished_date();
+        Long id = departmentt.getId();
         if(direction == Direction.ASC){
 
-          departments= departmentRepository.searchDepartmentsByDateAscNativeASC(nameOrDescription,startData,lastname,pageable);
+          departments= departmentRepository.searchDepartmentsByDateAscNativeASC(nameOrDescription,startData,id,pageable);
         }else{
-          departments= departmentRepository.searchDepartmentsByDateAscNativeDesc(nameOrDescription,startData,lastname,pageable);
+          departments= departmentRepository.searchDepartmentsByDateAscNativeDesc(nameOrDescription,startData,id,pageable);
         }
       }
     }
