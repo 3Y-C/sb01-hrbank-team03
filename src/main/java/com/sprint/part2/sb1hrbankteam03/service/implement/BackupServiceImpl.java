@@ -1,14 +1,14 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
 import com.sprint.part2.sb1hrbankteam03.dto.backup.BackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.CursorPageResponseBackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.ParsedBackupDto;
 import com.sprint.part2.sb1hrbankteam03.dto.backup.RequestBackupDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
-import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.BackupStatus;
 
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
-import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.mapper.BackupMapper;
@@ -16,8 +16,8 @@ import com.sprint.part2.sb1hrbankteam03.repository.BackupRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.FileMetaDataRepository;
+import com.sprint.part2.sb1hrbankteam03.service.BackupService;
 import com.sprint.part2.sb1hrbankteam03.stroage.FileStorage;
-import jakarta.persistence.criteria.CriteriaBuilder.In;
 import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +29,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -98,31 +97,39 @@ public class BackupServiceImpl implements BackupService {
     backups = sortBackups(parsedBackupDto, requestBackupDto.getSortField(),
         requestBackupDto.getSortDirection());
 
-    int size = parsedBackupDto.getPageSize();
+    int requestedSize = parsedBackupDto.getPageSize();
     //다음 페이지 존재하는지 확인하기
-    boolean hasNext = backups.size() > size;
+    boolean hasNext = backups.size() > requestedSize;
 
     // 요청한 size보다 많은 결과가 있으면 마지막 항목을 제거해야함!
     if (hasNext) {
-      backups = backups.subList(0, size);
+      backups = backups.subList(0, requestedSize);
     }
 
     // 결과가 없거나 다음 페이지가 없는 경우,
-    Long nextCursor = null;
+    LocalDateTime nextCursor = null;
+    Long nextIdAfter = null;
     if (!backups.isEmpty()) {
       // 마지막 항목의 ID를 다음 커서로 설정하기
-      nextCursor = backups.get(backups.size() - 1).getId();
+      if(requestBackupDto.getSortField().equalsIgnoreCase("startedAt")){
+        nextCursor = backups.get(backups.size() - 1).getStartAt();
+      }else{
+        nextCursor = backups.get(backups.size() - 1).getEndAt();
+      }
+      nextIdAfter = backups.get(backups.size() -1).getId();
     }
 
     List<BackupDto> backupDtos = backups.stream()
         .map(backupMapper::toDto)
         .toList();
 
+    int actualSize = backupDtos.size();
+
     return backupMapper.toPageDto(
         backupDtos,
         nextCursor == null ? null : nextCursor.toString(),
-        parsedBackupDto.getCursorId(),
-        size,
+        nextIdAfter,
+        actualSize,
         parsedBackupDto.getTotalElements(),
         hasNext);
   }
@@ -276,55 +283,30 @@ public class BackupServiceImpl implements BackupService {
 
     String workerIp = requestBackupDto.getWorker() == null ? "" : requestBackupDto.getWorker();
     BackupStatus backupStatus = null;
-    if (requestBackupDto.getStatus() == null || requestBackupDto.getStatus().isEmpty()) {
-
+    if (requestBackupDto.getStatus() != null && !requestBackupDto.getStatus().isEmpty()) {
+      backupStatus = BackupStatus.valueOf(requestBackupDto.getStatus());
     }
 
     //startedAtFrom 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최소값으로 설정
-    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+    LocalDateTime startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);;
     if (requestBackupDto.getStartedAtFrom() != null) {
-      try {
-        startedAtFrom = LocalDateTime.parse(requestBackupDto.getStartedAtFrom());
-      } catch (Exception e) {
-        startedAtFrom = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
-      }
+      startedAtFrom = LocalDateTime.ofInstant(Instant.parse(requestBackupDto.getStartedAtFrom()), ZoneId.of("Asia/Seoul"));
     }
     //startedAtTo 가 Null 이거나 파싱 불가능한 값이라면 LocalDateTime 최대값으로 설정
     LocalDateTime startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-    if (requestBackupDto.getStartedAtTo() != null) {
-      try {
-        startedAtTo = LocalDateTime.parse(requestBackupDto.getStartedAtTo());
-      } catch (Exception e) {
-        startedAtTo = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-      }
+    if (requestBackupDto.getStartedAtTo() != null ) {
+      startedAtTo = LocalDateTime.ofInstant(Instant.parse(requestBackupDto.getStartedAtTo()),ZoneId.of("Asia/Seoul"));
     }
 
     int size = requestBackupDto.getSize() == 10 ? 10 : requestBackupDto.getSize();
     PageRequest pageRequest = PageRequest.of(0, size + 1);
 
     // 커서 값 설정
-    Long cursorId = null;
-    LocalDateTime cursorStartAt = null;
+    Long cursorId = requestBackupDto.getIdAfter();
+    LocalDateTime cursorAt = null;
 
-    if (requestBackupDto.getCursor() != null) {
-      try {
-        cursorId = Long.parseLong(requestBackupDto.getCursor());
-
-        // 커서 ID로 엔티티 조회하여 startAt 가져오기
-        Optional<Backup> cursorBackup = backupRepository.findById(cursorId);
-        if (cursorBackup.isPresent()) {
-          cursorStartAt = cursorBackup.get().getStartAt();
-        } else {
-          // 해당 ID가 없을 경우 기본값 설정 (내림차순이므로 최대값으로 설정해야한다.)
-          cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-        }
-      } catch (NumberFormatException e) {
-        cursorId = null;
-        cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-      }
-    } else {
-      // 첫 페이지 요청 시 최대값으로 설정 (내림차순이므로!)
-      cursorStartAt = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+    if (requestBackupDto.getCursor() != null && !requestBackupDto.getCursor().isEmpty()) {
+      cursorAt = LocalDateTime.parse(requestBackupDto.getCursor());
     }
 
     //조회 결과 총 개수
@@ -342,7 +324,7 @@ public class BackupServiceImpl implements BackupService {
         startedAtTo,
         size,
         cursorId,
-        cursorStartAt,
+        cursorAt,
         pageRequest,
         totalElements
     );

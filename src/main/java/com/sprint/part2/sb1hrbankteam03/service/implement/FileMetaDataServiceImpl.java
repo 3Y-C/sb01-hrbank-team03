@@ -1,8 +1,9 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
-import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
 import com.sprint.part2.sb1hrbankteam03.repository.FileMetaDataRepository;
+import com.sprint.part2.sb1hrbankteam03.service.FileMetaDataService;
 import com.sprint.part2.sb1hrbankteam03.stroage.FileStorage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +24,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 @Service
 @RequiredArgsConstructor
-public class FileMetaDataServiceImpl implements FileMetaDataService{
+public class FileMetaDataServiceImpl implements FileMetaDataService {
 
   private final FileMetaDataRepository fileMetaDataRepository;
   private final FileStorage fileStorage;

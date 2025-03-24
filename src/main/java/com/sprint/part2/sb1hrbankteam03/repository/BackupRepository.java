@@ -1,7 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.repository;
 
 import com.sprint.part2.sb1hrbankteam03.entity.Backup;
-import com.sprint.part2.sb1hrbankteam03.entity.BackupStatus;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.BackupStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,9 +21,12 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
-      "AND (:cursorId IS NULL OR (b.startAt > :cursorStartAt) " +
-      "OR (b.startAt = :cursorStartAt AND b.id > :cursorId)) " +
-      "ORDER BY b.startAt ASC, b.id ASC ")
+      "AND (:cursorId IS NULL OR " +
+      "   (b.startAt IS NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL) OR " +
+      "   (b.startAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NULL) OR " +
+      "   (b.startAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NOT NULL AND b.startAt > :cursorStartAt) OR " +
+      "   (b.startAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NOT NULL AND b.startAt = :cursorStartAt AND b.id > :cursorId)) " +
+      "ORDER BY CASE WHEN b.startAt IS NULL THEN 1 ELSE 0 END, b.startAt ASC, b.id ASC ")
   List<Backup> findByConditionsOrderByStartAtAsc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
@@ -39,9 +42,12 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
-      "AND (:cursorId IS NULL OR (b.startAt < :cursorStartAt) " +
-      "OR (b.startAt = :cursorStartAt AND b.id < :cursorId)) " +
-      "ORDER BY b.startAt DESC, b.id DESC ")
+      "AND (:cursorId IS NULL OR " +
+      "   (b.startAt IS NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL) OR " +
+      "   (b.startAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NULL) OR " +
+      "   (b.startAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NOT NULL AND b.startAt < :cursorStartAt) OR " +
+      "   (b.startAt IS NOT NULL AND cast( :cursorStartAt as localdatetime )  IS NOT NULL AND b.startAt = :cursorStartAt AND b.id < :cursorId)) " +
+      "ORDER BY CASE WHEN b.startAt IS NULL THEN 1 ELSE 0 END, b.startAt DESC, b.id DESC ")
   List<Backup> findByConditionsOrderByStartAtDesc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
@@ -58,9 +64,12 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
-      "AND (:cursorId IS NULL OR (b.endAt > :cursorStartAt) " +
-      "OR (b.endAt = :cursorStartAt AND b.id > :cursorId)) " +
-      "ORDER BY b.endAt ASC, b.id ASC ")
+      "AND (:cursorId IS NULL OR " +
+      "   (b.endAt IS NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime ) IS NULL) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL AND b.endAt > :cursorStartAt) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL AND b.endAt > :cursorStartAt AND b.id > :cursorId)) " +
+      "ORDER BY CASE WHEN b.endAt IS NULL THEN 1 ELSE 0 END, b.endAt ASC, b.id ASC ")
   List<Backup> findByConditionsOrderByEndAtAsc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,
@@ -77,9 +86,12 @@ public interface BackupRepository extends JpaRepository<Backup, Long> {
       "AND (:workerIp = '' OR b.workerIp LIKE CONCAT( '%', :workerIp ,'%')) " +
       "AND (b.startAt >= :startAtFrom) " +
       "AND (b.startAt <= :startAtTo) " +
-      "AND (:cursorId IS NULL OR (b.endAt < :cursorStartAt) " +
-      "OR (b.endAt = :cursorStartAt AND b.id < :cursorId)) " +
-      "ORDER BY b.endAt DESC, b.id DESC ")
+      "AND (:cursorId IS NULL OR" +
+      "   (b.endAt IS NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime ) IS NULL) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL AND b.endAt < :cursorStartAt) OR " +
+      "   (b.endAt IS NOT NULL AND cast( :cursorStartAt as localdatetime ) IS NOT NULL AND b.endAt < :cursorStartAt AND b.id < :cursorId)) " +
+      "ORDER BY CASE WHEN b.endAt IS NULL THEN 1 ELSE 0 END, b.endAt DESC, b.id DESC ")
   List<Backup> findByConditionsOrderByEndAtDesc(
       @Param("status") BackupStatus status,
       @Param("workerIp") String workerIp,

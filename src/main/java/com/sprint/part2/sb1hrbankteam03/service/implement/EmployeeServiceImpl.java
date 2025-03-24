@@ -1,6 +1,7 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
-import static com.sprint.part2.sb1hrbankteam03.entity.Status.ACTIVE;
+import static com.sprint.part2.sb1hrbankteam03.entity.QDepartment.department;
+import static com.sprint.part2.sb1hrbankteam03.entity.enums.Status.ACTIVE;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employee.CursorPageResponseEmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeCreateRequest;
@@ -9,30 +10,32 @@ import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeTrendDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employee.EmployeeUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.Employee;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
-import com.sprint.part2.sb1hrbankteam03.entity.FileCategory;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.FileCategory;
 import com.sprint.part2.sb1hrbankteam03.entity.FileMetaData;
-import com.sprint.part2.sb1hrbankteam03.entity.Status;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.Status;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeRepository;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeService;
+import com.sprint.part2.sb1hrbankteam03.service.FileMetaDataService;
 import com.sprint.part2.sb1hrbankteam03.stroage.LocalFileStorage;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,19 +54,19 @@ public class EmployeeServiceImpl implements EmployeeService {
   private final LocalFileStorage localFileStorage;
 
   @Override
-  public CursorPageResponseEmployeeDto getEmployees(String keyword, String department, String position,
+  public CursorPageResponseEmployeeDto getEmployees(
+      String keyword, String department, String position,
       String employeeNumber, String startDate, String endDate,
       String status, String sortField, String sortDirection,
       String cursor, int size) {
 
     if (sortDirection == null || sortDirection.isEmpty()) {
-      sortDirection = "asc"; // 기본값 설정
+      sortDirection = "asc";
     }
-    Status employeeStatus = (status != null) ? Status.from(status) : null;
-    Pageable pageable = PageRequest.of(0, size, getSort(sortField, sortDirection));
-    Long idAfter = (cursor != null) ? Long.parseLong(cursor) : null;
 
-    // 날짜 변환 시 예외 처리 추가
+    Status employeeStatus = (status != null && !status.isEmpty()) ? Status.from(status) : null;
+    Pageable pageable = PageRequest.of(0, size, getSort(sortField, sortDirection));
+
     LocalDate start = null;
     LocalDate end = null;
     try {
@@ -73,19 +76,70 @@ public class EmployeeServiceImpl implements EmployeeService {
       throw new IllegalArgumentException("입사일 형식이 올바르지 않습니다. (예: yyyy-MM-dd)");
     }
 
-    List<Employee> employees = employeeRepository.findEmployeesWithFilters(keyword, department, position,
-        employeeNumber, start, end, idAfter, employeeStatus, pageable);
+    String sortCursor = null;
+    Long idAfter = null;
 
-    List<EmployeeDto> employeeDtos = employees.stream()
-        .map(employeeMapper::todto)
-        .toList();
+    if (cursor != null && !cursor.isEmpty()) {
+      switch (sortField) {
+        case "name":
+        case "hireDate":
+        case "employeeNumber":
+          if (cursor.matches("\\d+")) {
+            Long id = Long.parseLong(cursor);
+            Employee emp = employeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 직원이 존재하지 않습니다."));
+            if ("name".equals(sortField)) {
+              sortCursor = emp.getName();
+            } else if ("hireDate".equals(sortField)) {
+              sortCursor = emp.getHireDate().toString();
+            } else if ("employeeNumber".equals(sortField)) {
+              sortCursor = emp.getEmployeeNumber();
+            }
+            idAfter = id;
+          } else {
+            sortCursor = cursor;
+          }
+          break;
+        default:
+          idAfter = Long.parseLong(cursor);
+          break;
+      }
+    }
 
-    String nextCursor = employees.isEmpty() ? null : String.valueOf(employees.get(employees.size() - 1).getId());
-    int totalElements = (int) getTotalEmployeeCount(status,startDate,endDate);
-    boolean hasNext = employees.size() == size;
+    Slice<Employee> employeeSlice = employeeRepository.findEmployeesWithFilters(
+        keyword, department, position, employeeNumber,
+        start, end, sortCursor, idAfter, sortField, sortDirection,
+        employeeStatus, pageable
+    );
 
-    return employeeMapper.toPageDto(employeeDtos, nextCursor, idAfter, size, totalElements, hasNext);
+    Slice<EmployeeDto> dtoSlice = employeeSlice.map(employeeMapper::todto);
+
+    String nextCursor = null;
+    Long nextIdAfter = null;
+    if (!employeeSlice.getContent().isEmpty()) {
+      Employee last = employeeSlice.getContent().get(employeeSlice.getContent().size() - 1);
+      nextIdAfter = last.getId();
+      switch (sortField) {
+        case "name":
+          nextCursor = last.getName();
+          break;
+        case "hireDate":
+          nextCursor = last.getHireDate().toString();
+          break;
+        case "employeeNumber":
+          nextCursor = last.getEmployeeNumber();
+          break;
+        default:
+          nextCursor = String.valueOf(last.getId());
+          break;
+      }
+    }
+
+    int totalElements = (int) getTotalEmployeeCount(status, startDate, endDate,department,position);
+    return employeeMapper.fromSlice(dtoSlice, nextCursor, totalElements);
   }
+
+
 
   @Override
   @Transactional
@@ -208,46 +262,64 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
 
-  @Override
   public List<EmployeeDistributionDto> getEmployeeDistribution(String groupBy, String status) {
-    String criteria =(groupBy != null)? groupBy.toLowerCase():"department";
-    Status employeeStatus=(status !=null)? Status.from(status):ACTIVE;
-    List<Object[]> data = employeeRepository.getEmployeeDistribution(criteria, employeeStatus);
+    String criteria = (groupBy != null) ? groupBy.toLowerCase() : "department";
+    Status employeeStatus = (status != null) ? Status.from(status) : Status.ACTIVE;
 
-    long totalCount=employeeRepository.countByStatus(employeeStatus);
-    List<EmployeeDistributionDto> distribution = data.stream()
+    List<Object[]> data;
+
+    if ("position".equals(criteria)) {
+      data = employeeRepository.getEmployeeDistributionByPosition(employeeStatus);
+    } else {
+      data = employeeRepository.getEmployeeDistributionByDepartment(employeeStatus);
+    }
+
+    long totalCount = employeeRepository.countByStatus(employeeStatus);
+
+    return data.stream()
         .map(objects -> {
           String groupKey = (String) objects[0];
           int count = ((Number) objects[1]).intValue();
           double percentage = (totalCount > 0) ? (count * 100.0 / totalCount) : 0.0;
-
           return new EmployeeDistributionDto(groupKey, count, percentage);
         })
         .toList();
-    return distribution;
   }
 
-  @Override
-  public long getTotalEmployeeCount(String status, String fromDate, String toDate) {
-    Status employeeStatus = (status != null) ? Status.from(status) : null;
 
+  @Override
+  public long getTotalEmployeeCount(String status, String fromDate, String toDate, String department, String position) {
+//    if ((status == null || status.isEmpty()) && (fromDate == null || fromDate.isEmpty()) && (toDate == null || toDate.isEmpty())) {
+//      return employeeRepository.count(); // 전체
+//    }
+    Status employeeStatus = (status != null) ? Status.from(status) : null;
     LocalDate now = LocalDate.now();
     LocalDate start = (fromDate != null) ? LocalDate.parse(fromDate) : LocalDate.of(1900,1,1);
     LocalDate end = (toDate != null) ? LocalDate.parse(toDate) : now;
+      boolean isAllEmpty =
+          employeeStatus == null &&
+              (department == null || department.isEmpty()) &&
+              (position == null || position.isEmpty()) &&
+              (fromDate == null || fromDate.isEmpty()) &&
+              (toDate == null || toDate.isEmpty());
 
-    if (start != null && end != null) {
-      return (employeeStatus != null)
-          ? employeeRepository.countByStatusAndHireDateBetween(employeeStatus, start, end)
-          : employeeRepository.countByHireDateBetween(start, end);
-    } else if (start != null) {
-      return (employeeStatus != null)
-          ? employeeRepository.countByStatusAndHireDateAfter(employeeStatus, start)
-          : employeeRepository.countByHireDateAfter(start);
-    } else {
-      return (employeeStatus != null)
-          ? employeeRepository.countByStatus(employeeStatus)
-          : employeeRepository.count();
-    }
+      if (isAllEmpty) {
+        return employeeRepository.count(); // 조건이 모두 없으면 전체 카운트
+      }
+//    if (start != null && end != null) {
+//      return (employeeStatus != null)
+//          ? employeeRepository.countByStatusAndHireDateBetween(employeeStatus, start, end)
+//          : employeeRepository.countByHireDateBetween(start, end);
+//    } else if (start != null) {
+//      return (employeeStatus != null)
+//          ? employeeRepository.countByStatusAndHireDateAfter(employeeStatus, start)
+//          : employeeRepository.countByHireDateAfter(start);
+//    } else {
+//      return (employeeStatus != null)
+//          ? employeeRepository.countByStatus(employeeStatus)
+//          : employeeRepository.count();
+//    }
+    return employeeRepository.countByFilters(department, position, employeeStatus, start, end);
   }
 
   private void validateEmailUnique(String email) {

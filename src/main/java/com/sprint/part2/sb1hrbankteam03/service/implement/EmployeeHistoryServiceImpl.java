@@ -1,17 +1,18 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.ChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeChangeInfo;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeChangeDetail;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeChangeDetailMapper;
 import com.sprint.part2.sb1hrbankteam03.mapper.EmployeeHistoryMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeChangeDetailRepository;
 import com.sprint.part2.sb1hrbankteam03.repository.EmployeeHistoryRepository;
+import com.sprint.part2.sb1hrbankteam03.service.EmployeeHistoryService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,28 +98,43 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
       Instant atFrom, Instant atTo, String cursor, Long idAfter, String sortField,
       String sortDirection, Pageable pageable) {
 
-    // 쿼리 실행
+    // 데이터 조회
     Slice<EmployeeHistory> slice = employeeHistoryRepository.findAllWithFilters(
         employeeNumber, memo, ipAddress, changeType, atFrom, atTo, cursor, idAfter, pageable, sortField, sortDirection
     );
 
-    // DTO 변환
-    Slice<ChangeLogDto> dtoSlice = slice.map(employeeHistoryMapper::toDto);
+    List<EmployeeHistory> contentList = slice.getContent();
+    boolean hasNext = slice.hasNext();
 
-    // 커서 계산 (정렬 필드에 따라 동적 처리)
     String nextCursor = null;
-    if (!slice.getContent().isEmpty()) {
-      EmployeeHistory last = slice.getContent().get(slice.getContent().size() - 1);
+    Long nextIdAfter = null;
+
+    if (hasNext && !contentList.isEmpty()) {
+      EmployeeHistory last = contentList.get(contentList.size() - 1);
       if ("ipAddress".equals(sortField)) {
         nextCursor = last.getIpAddress();
       } else {
         nextCursor = last.getAt().toString();  // 기본: at
       }
+      nextIdAfter = last.getId();
     }
 
+    int actualSize = contentList.size();
     Long totalElements = employeeHistoryRepository.countByFilters(employeeNumber, memo, ipAddress, changeType, atFrom, atTo);
 
-    return employeeHistoryMapper.fromSlice(dtoSlice, nextCursor, totalElements);
+    // DTO 변환
+    List<ChangeLogDto> dtoList = contentList.stream()
+        .map(employeeHistoryMapper::toDto)
+        .toList();
+
+    return new CursorPageResponseChangeLogDto(
+        dtoList,
+        nextCursor,
+        nextIdAfter,
+        actualSize,
+        totalElements,
+        hasNext
+    );
   }
 
   @Override

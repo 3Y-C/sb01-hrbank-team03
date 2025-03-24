@@ -3,7 +3,7 @@ package com.sprint.part2.sb1hrbankteam03.service;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.CursorPageResponseChangeLogDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.DiffDto;
 import com.sprint.part2.sb1hrbankteam03.dto.employeeHistory.EmployeeSnapshotDto;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Pageable;

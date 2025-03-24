@@ -1,11 +1,11 @@
-package com.sprint.part2.sb1hrbankteam03.repository;
+package com.sprint.part2.sb1hrbankteam03.repository.custom;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.sprint.part2.sb1hrbankteam03.entity.ChangeType;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import com.sprint.part2.sb1hrbankteam03.entity.EmployeeHistory;
 import com.sprint.part2.sb1hrbankteam03.entity.QEmployeeHistory;
 import jakarta.persistence.EntityManager;
@@ -39,11 +39,10 @@ public class EmployeeHistoryRepositoryImpl implements EmployeeHistoryRepositoryC
     builder.and(atFromCondition(atFrom, q));
     builder.and(atToCondition(atTo, q));
 
-    JPAQuery<Long> countQuery = queryFactory.select(q.count())
+    return queryFactory.select(q.count())
         .from(q)
-        .where(builder);
-
-    return countQuery.fetchOne();
+        .where(builder)
+        .fetchOne();
   }
 
   @Override
@@ -63,43 +62,42 @@ public class EmployeeHistoryRepositoryImpl implements EmployeeHistoryRepositoryC
     builder.and(atFromCondition(atFrom, q));
     builder.and(atToCondition(atTo, q));
 
-    // 커서 조건 추가
     BooleanExpression cursorCondition = buildCursorCondition(q, cursor, idAfter, sortField, sortDirection);
     if (cursorCondition != null) {
       builder.and(cursorCondition);
     }
 
-    JPAQuery<EmployeeHistory> query = queryFactory.selectFrom(q)
+    List<EmployeeHistory> results = queryFactory
+        .selectFrom(q)
         .where(builder)
         .orderBy(getOrderSpecifiers(q, sortField, sortDirection))
         .offset(pageable.getOffset())
-        .limit(pageable.getPageSize());
+        .limit(pageable.getPageSize() + 1) // 다음 페이지 여부 확인용 +1
+        .fetch();
 
-    List<EmployeeHistory> results = query.fetch();
-    boolean hasNext = results.size() == pageable.getPageSize();
+    boolean hasNext = results.size() > pageable.getPageSize();
+
+    if (hasNext) {
+      results.remove(results.size() - 1); // 초과된 한 건 제거
+    }
 
     return new SliceImpl<>(results, pageable, hasNext);
   }
 
-  // 커서 조건 생성
   private BooleanExpression buildCursorCondition(QEmployeeHistory q, String cursor, Long idAfter, String sortField, String sortDirection) {
     if (cursor == null || idAfter == null) return null;
 
     boolean isDesc = "DESC".equalsIgnoreCase(sortDirection);
 
     if ("ipAddress".equals(sortField)) {
-      if (isDesc) {
-        return q.ipAddress.lt(cursor).or(q.ipAddress.eq(cursor).and(q.id.lt(idAfter)));
-      } else {
-        return q.ipAddress.gt(cursor).or(q.ipAddress.eq(cursor).and(q.id.gt(idAfter)));
-      }
+      return isDesc
+          ? q.ipAddress.lt(cursor).or(q.ipAddress.eq(cursor).and(q.id.lt(idAfter)))
+          : q.ipAddress.gt(cursor).or(q.ipAddress.eq(cursor).and(q.id.gt(idAfter)));
     } else if ("at".equals(sortField)) {
       Instant cursorAt = Instant.parse(cursor);
-      if (isDesc) {
-        return q.at.lt(cursorAt).or(q.at.eq(cursorAt).and(q.id.lt(idAfter)));
-      } else {
-        return q.at.gt(cursorAt).or(q.at.eq(cursorAt).and(q.id.gt(idAfter)));
-      }
+      return isDesc
+          ? q.at.lt(cursorAt).or(q.at.eq(cursorAt).and(q.id.lt(idAfter)))
+          : q.at.gt(cursorAt).or(q.at.eq(cursorAt).and(q.id.gt(idAfter)));
     }
 
     return null;
@@ -109,19 +107,20 @@ public class EmployeeHistoryRepositoryImpl implements EmployeeHistoryRepositoryC
     boolean isDesc = "DESC".equalsIgnoreCase(sortDirection);
 
     if ("ipAddress".equals(sortField)) {
-      return isDesc ?
-          new OrderSpecifier[]{q.ipAddress.desc(), q.id.desc()} :
-          new OrderSpecifier[]{q.ipAddress.asc(), q.id.asc()};
+      return isDesc
+          ? new OrderSpecifier[]{q.ipAddress.desc(), q.id.desc()}
+          : new OrderSpecifier[]{q.ipAddress.asc(), q.id.asc()};
     } else if ("at".equals(sortField)) {
-      return isDesc ?
-          new OrderSpecifier[]{q.at.desc(), q.id.desc()} :
-          new OrderSpecifier[]{q.at.asc(), q.id.asc()};
+      return isDesc
+          ? new OrderSpecifier[]{q.at.desc(), q.id.desc()}
+          : new OrderSpecifier[]{q.at.asc(), q.id.asc()};
     }
 
+    // 기본 정렬
     return new OrderSpecifier[]{q.at.desc(), q.id.desc()};
   }
 
-  // 필터 조건들
+  // 필터 조건
   private BooleanExpression employeeNumberCondition(String employeeNumber, QEmployeeHistory q) {
     return employeeNumber != null ? q.employeeNumber.containsIgnoreCase(employeeNumber) : null;
   }

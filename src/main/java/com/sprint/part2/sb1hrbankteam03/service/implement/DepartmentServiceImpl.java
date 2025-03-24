@@ -1,5 +1,7 @@
-package com.sprint.part2.sb1hrbankteam03.service;
+package com.sprint.part2.sb1hrbankteam03.service.implement;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentCreateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.request.DepartmentUpdateRequest;
 import com.sprint.part2.sb1hrbankteam03.dto.department.respons.CursorPageResponseDepartmentDto;
@@ -7,9 +9,11 @@ import com.sprint.part2.sb1hrbankteam03.dto.department.respons.DepartmentDto;
 import com.sprint.part2.sb1hrbankteam03.entity.Department;
 import com.sprint.part2.sb1hrbankteam03.mapper.DepartmentMapper;
 import com.sprint.part2.sb1hrbankteam03.repository.DepartmentRepository;
+import com.sprint.part2.sb1hrbankteam03.service.DepartmentService;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,7 +29,7 @@ import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
 @Service
-public class DepartmentServiceImpl implements DepartmentService{
+public class DepartmentServiceImpl implements DepartmentService {
 
   private final DepartmentRepository departmentRepository;
   private final DepartmentMapper departmentMapper;
@@ -55,8 +60,10 @@ public class DepartmentServiceImpl implements DepartmentService{
   public DepartmentDto update(Long id,DepartmentUpdateRequest departmentUpdateRequest){
     Department department = departmentRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("department with id"  + id + "not found"));
-    if(departmentRepository.existsByName(departmentUpdateRequest.name())){
-      throw new IllegalArgumentException("이미 존재하는 부서 이름입니다: " + departmentUpdateRequest.name());
+    if(!department.getName().equals(departmentUpdateRequest.name())){
+      if(departmentRepository.existsByName(departmentUpdateRequest.name())){
+        throw new IllegalArgumentException("이미 존재하는 부서 이름입니다: " + departmentUpdateRequest.name());
+      }
     }
     department.update(departmentUpdateRequest.name(), departmentUpdateRequest.description(),
         departmentUpdateRequest.establishedDate());
@@ -97,20 +104,55 @@ public class DepartmentServiceImpl implements DepartmentService{
     Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 
     // 정렬 필드
-    String validSortField = sortField.equals("name") ? "name" : "establishDate";
+    String validSortField = sortField.equals("name") ? "name" : "established_date";
 
-    // null 이거나 빈 문자열인지 검사
     Long startId = null;
     if (cursor != null && !cursor.isEmpty()) {
-      String decodedCursor = new String(Base64.getDecoder().decode(cursor));
-      startId = Long.valueOf(decodedCursor); // 커서에서 ID를 추출
+      try {
+        // Base64 디코딩
+        String decodedCursor = new String(Base64.getDecoder().decode(cursor));
+
+        // JSON 파싱을 위해 Jackson ObjectMapper 사용
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(decodedCursor);
+
+        // 'id' 값을 Long으로 추출
+        startId = jsonNode.get("id").asLong();  // "id" 필드 값을 Long으로 추출
+      } catch (Exception e) {
+        throw new IllegalArgumentException("잘못된 커서 형식입니다.", e);
+      }
     }
 
+
     Pageable pageable = PageRequest.of(0, size, Sort.by(direction, validSortField));
+    Page<Department> departments = null;
+    Department departmentt;
+    if(cursor.equals("")){
+      departments = departmentRepository.searchDepartments(nameOrDescription,startId,pageable);
+    }else{
+      departmentt = departmentRepository.findById(startId)
+          .orElseThrow(() -> new NoSuchElementException("Department with id not found"));
+      if(validSortField == "name"){
+        String startName = departmentt.getName();
+        if(direction == Direction.ASC){
+          departments= departmentRepository.searchDepartmentsByNameAsc(nameOrDescription,startName,pageable);
+        }else{
+          departments= departmentRepository.searchDepartmentsByNameDesc(nameOrDescription,startName,pageable);
+        }
+      }else{
+        String lastname = departmentt.getName();
+        LocalDate startData = departmentt.getEstablished_date();
+        if(direction == Direction.ASC){
 
-    //부서 조회
-    Page<Department> departments = departmentRepository.searchDepartments(nameOrDescription, startId, pageable);
+          departments= departmentRepository.searchDepartmentsByDateAscNativeASC(nameOrDescription,startData,lastname,pageable);
+        }else{
+          departments= departmentRepository.searchDepartmentsByDateAscNativeDesc(nameOrDescription,startData,lastname,pageable);
+        }
+      }
+    }
 
+
+    int currentPageSize = departments.getContent().size();
 
     // 다음 페이지를 위한 커서 설정 base64 인코딩, 디코딩으로
     // "{"id":" 인코딩하면 "eyJpZCI6" 나오고, "}" 디코딩하면 "fQ==" 값이 나온다.
@@ -132,7 +174,7 @@ public class DepartmentServiceImpl implements DepartmentService{
     return departmentMapper.toCursorPageResponseDto(departmentList,
         nextCursor,
         nextIdAfter,
-        size,
+        currentPageSize,
         totalDepartments,
         departments.hasNext());
   }

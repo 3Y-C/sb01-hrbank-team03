@@ -1,5 +1,7 @@
 package com.sprint.part2.sb1hrbankteam03.entity;
 
+import com.sprint.part2.sb1hrbankteam03.entity.base.BaseEntity;
+import com.sprint.part2.sb1hrbankteam03.entity.enums.ChangeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

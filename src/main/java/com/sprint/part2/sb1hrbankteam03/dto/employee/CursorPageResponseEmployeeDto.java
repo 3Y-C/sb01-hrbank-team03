@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Slice;
 
 @Getter
 @Setter
@@ -16,5 +17,5 @@ public class CursorPageResponseEmployeeDto {
   private Long nextIdAfter;
   private int size;
   private int totalElements;
-  private boolean hasNest;
+  private boolean hasNext;
 }

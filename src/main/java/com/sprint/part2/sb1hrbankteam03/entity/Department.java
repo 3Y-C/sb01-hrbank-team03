@@ -1,13 +1,10 @@
 package com.sprint.part2.sb1hrbankteam03.entity;
 
+import com.sprint.part2.sb1hrbankteam03.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -24,12 +21,12 @@ public class Department extends BaseUpdatableEntity {
   private String description;
 
   @Column(name = "established_date",nullable = false)
-  private LocalDate establishDate;
+  private LocalDate established_date;
 
   public Department(String name, String description, LocalDate establishDate){
     this.name = name;
     this.description = description;
-    this.establishDate = establishDate;
+    this.established_date = establishDate;
   }
 
   public void update(String newName, String newDescription, LocalDate newEstablishDate){
@@ -44,7 +41,7 @@ public class Department extends BaseUpdatableEntity {
 //    }
     this.name = newName;
     this.description = newDescription;
-    this.establishDate = newEstablishDate;
+    this.established_date = newEstablishDate;
   }
 
 }
