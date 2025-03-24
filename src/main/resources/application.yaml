@@ -12,10 +12,14 @@ spring:
     open-in-view: false
     properties:
       hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
         hbm2ddl:
           schema-generation:
             script:
               action: none
+
 
 springdoc:
   api-docs:
