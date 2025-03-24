@@ -17,10 +17,10 @@ spring:
 #        jdbc:
 #          lob:
 #            non_contextual_creation: true
-        hbm2ddl:
-          schema-generation:
-            script:
-              action: none
+#        hbm2ddl:
+#         schema-generation:
+#            script:
+#              action: none
 
 
 springdoc:
