@@ -5,7 +5,7 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
-    dialect: org.hibernate.dialect.MySQLDialect
+#    dialect: org.hibernate.dialect.MySQLDialect
 
   jpa:
     hibernate:
@@ -21,7 +21,7 @@ spring:
           schema-generation:
             script:
               action: none
-              
+
 
 springdoc:
   api-docs:
