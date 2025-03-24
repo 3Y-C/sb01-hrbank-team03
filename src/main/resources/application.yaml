@@ -9,10 +9,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
     open-in-view: false
-    properties:
-      hibernate:
 
 springdoc:
   api-docs:
