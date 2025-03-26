@@ -5,16 +5,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    dialect: org.hibernate.dialect.PostgreSQLDialect
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
     open-in-view: false
-    properties:
-      hbm2ddl:
-        schema-generation:
-          script:
-            action: none
 
 springdoc:
   api-docs:
