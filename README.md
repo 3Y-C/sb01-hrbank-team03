@@ -81,7 +81,7 @@ sb1hrbankteam03
 
 ## 구현 홈페이지
 - https://sb01-hrbank-team03.onrender.com/ 
-- https://powerful-elegance-production.up.railway.app/
+- https://sb01-hrbank-team03.up.railway.app/
 ## 프로젝트 회고
 - 개발리포트 https://angry-mile-4b9.notion.site/1bda788b97e08060a498da599856397d?pvs=4 
 - ppt https://www.figma.com/slides/wJR7TTpLLigGLSkipIKbzB/hrbank-3y-c?node-id=26-606&t=9hJTr6VY08hB0x00-1
